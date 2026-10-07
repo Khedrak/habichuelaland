@@ -1,16 +1,106 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/invitation.css';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+	title="Tienes una invitación"
+	description="Una invitación muy especial está por llegar."
+>
+	<main class="experience" id="experience">
+		<section class="intro-screen" id="intro-screen" aria-labelledby="intro-title">
+			<picture class="scene-background" aria-hidden="true">
+				<source media="(max-width: 600px)" srcset="/assets/invitation-background-mobile.webp" />
+				<img src="/assets/invitation-background-desktop.webp" alt="" width="1664" height="1024" fetchpriority="high" />
+			</picture>
+			<div class="scene-decorations" aria-hidden="true">
+				<img class="decoration cloud cloud-left" src="/assets/cloud.webp" alt="" />
+				<img class="decoration cloud cloud-right" src="/assets/cloud.webp" alt="" />
+				<img class="decoration cloud cloud-bottom" src="/assets/cloud.webp" alt="" />
+				<img class="decoration star star-one" src="/assets/star.webp" alt="" />
+				<img class="decoration star star-two" src="/assets/star.webp" alt="" />
+				<img class="decoration star star-three" src="/assets/star.webp" alt="" />
+				<img class="decoration moon" src="/assets/moon.webp" alt="" />
+				<img class="decoration teddy" src="/assets/teddy-bear.webp" alt="" />
+			</div>
+			<div class="intro-content">
+				<div class="envelope-stage" id="envelope-stage">
+					<img class="envelope-piece envelope-back-open" src="/assets/envelope-open-back-up.webp" alt="" aria-hidden="true" width="1390" height="1132" />
+					<div class="rising-letter">
+						<img class="invitation-card" src="/assets/invitation-card-landscape.webp" alt="" aria-hidden="true" width="1536" height="1024" />
+						<button class="letter-action" id="letter-action" type="button" disabled aria-label="Tienes una invitación. Toca para continuar">
+							<span class="letter-title">Tienes una<br />invitación</span>
+							<span class="letter-hint">Toca aquí para continuar</span>
+						</button>
+					</div>
+					<img class="envelope-piece envelope-pocket-bottom" src="/assets/envelope-pocket-bottom.webp" alt="" aria-hidden="true" width="1509" height="737" fetchpriority="high" />
+					<img class="envelope-piece envelope-flap-closed" src="/assets/envelope-flap-closed-down.webp" alt="" aria-hidden="true" width="2071" height="759" />
+				</div>
+
+				<p class="instruction" id="instruction" aria-live="polite">Tu invitación se está preparando…</p>
+			</div>
+		</section>
+
+		<section class="next-screen" id="next-screen" aria-labelledby="welcome-title" hidden>
+			<picture class="scene-background next-background" aria-hidden="true">
+				<source media="(max-width: 600px)" srcset="/assets/invitation-background-mobile.webp" />
+				<img src="/assets/invitation-background-desktop.webp" alt="" width="1664" height="1024" />
+			</picture>
+			<div class="scene-decorations" aria-hidden="true">
+				<img class="decoration cloud cloud-left" src="/assets/cloud.webp" alt="" />
+				<img class="decoration cloud cloud-right" src="/assets/cloud.webp" alt="" />
+				<img class="decoration cloud cloud-bottom" src="/assets/cloud.webp" alt="" />
+				<img class="decoration star star-one" src="/assets/star.webp" alt="" />
+				<img class="decoration star star-two" src="/assets/star.webp" alt="" />
+				<img class="decoration star star-three" src="/assets/star.webp" alt="" />
+				<img class="decoration moon" src="/assets/moon.webp" alt="" />
+				<img class="decoration teddy" src="/assets/teddy-bear.webp" alt="" />
+			</div>
+			<div class="welcome-card">
+				<p class="welcome-kicker">¡Qué alegría!</p>
+				<h2 id="welcome-title" tabindex="-1">Nos hace mucha ilusión compartir este momento contigo</h2>
+				<p>La invitación continúa aquí.<br />Muy pronto encontrarás todos los detalles.</p>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		const intro = document.querySelector('#intro-screen');
+		const stage = document.querySelector('#envelope-stage');
+		const instruction = document.querySelector('#instruction');
+		const letterAction = document.querySelector('#letter-action');
+		const closedEnvelope = document.querySelector('.envelope-flap-closed');
+		const nextScreen = document.querySelector('#next-screen');
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const pause = (duration) => new Promise((resolve) => window.setTimeout(resolve, duration));
+
+		const playOpeningSequence = async () => {
+		await pause(1700);
+			stage?.classList.add('is-opening');
+			closedEnvelope?.setAttribute('aria-hidden', 'true');
+			if (instruction) instruction.textContent = 'El sobre se está abriendo…';
+
+		await pause(1450);
+			stage?.classList.add('is-rising');
+			if (instruction) instruction.textContent = 'Tu carta está saliendo…';
+
+		await pause(1650);
+			stage?.classList.add('is-ready');
+			if (letterAction) letterAction.disabled = false;
+			if (instruction) instruction.textContent = 'Toca la carta para continuar';
+		};
+
+		void playOpeningSequence();
+
+		letterAction?.addEventListener('click', () => {
+			if (letterAction.disabled) return;
+			intro?.classList.add('is-leaving');
+			window.setTimeout(() => {
+				if (intro) intro.hidden = true;
+				if (nextScreen) nextScreen.hidden = false;
+				window.scrollTo({ top: 0, behavior: reducedMotion ? 'instant' : 'smooth' });
+				document.querySelector('#welcome-title')?.focus({ preventScroll: true });
+			}, reducedMotion ? 0 : 500);
+		});
+	</script>
+</BaseLayout>
