@@ -1,0 +1,38 @@
+const dateTime = '2026-11-28T16:00:00-03:00';
+const dateOptions = { timeZone: 'America/Santiago' };
+const eventDate = new Date(dateTime);
+const address = 'Alcalde Julio Arangua Nuñez Norte 399, Peñaflor';
+const timeLabel = `${new Intl.DateTimeFormat('es-CL', { ...dateOptions, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(eventDate)} hrs`;
+export const invitationConfig = {
+  dateTime,
+  timeLabel,
+  address,
+  mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`,
+  embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`,
+  dateLabel: new Intl.DateTimeFormat('es-CL', { ...dateOptions, day: 'numeric', month: 'long', year: 'numeric' }).format(eventDate),
+  day: new Intl.DateTimeFormat('es-CL', { ...dateOptions, day: 'numeric' }).format(eventDate),
+  weekday: new Intl.DateTimeFormat('es-CL', { ...dateOptions, weekday: 'long' }).format(eventDate),
+  month: new Intl.DateTimeFormat('es-CL', { ...dateOptions, month: 'long' }).format(eventDate),
+  year: new Intl.DateTimeFormat('es-CL', { ...dateOptions, year: 'numeric' }).format(eventDate),
+  phone: '56979381427',
+  defaultGuest: 'Familia y amigos',
+};
+
+// Tokens obscure names in shared links; they are not encryption or access control.
+export function decodeGuestName(token) {
+  if (!token || token.length > 512 || !/^[A-Za-z0-9_-]+={0,2}$/.test(token)) return invitationConfig.defaultGuest;
+  try {
+    const bytes = Uint8Array.from(atob(token.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    const name = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim();
+    return name && name.length <= 100 && !/[\u0000-\u001f\u007f]/.test(name) ? name : invitationConfig.defaultGuest;
+  } catch { return invitationConfig.defaultGuest; }
+}
+export function encodeGuestName(name) {
+  const bytes = new TextEncoder().encode(name.trim());
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+export function getConfirmationUrl(guest) {
+  const introduction = guest === invitationConfig.defaultGuest ? '¡Hola!' : `¡Hola! Soy ${guest}.`;
+  const message = `${introduction} Confirmo mi asistencia a la revelación de género del ${invitationConfig.dateLabel} a las ${invitationConfig.timeLabel}. ¡Qué emoción acompañarlos!`;
+  return `https://wa.me/${invitationConfig.phone}?text=${encodeURIComponent(message)}`;
+}

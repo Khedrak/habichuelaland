@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AdminInviteForm from '../components/AdminInviteForm.jsx';
+import '../styles/invitation.css';
+---
+
+<BaseLayout title="Preparar invitaciones" description="Generador de enlaces personalizados para nuestra invitación.">
+  <main class="admin-page">
+    <div class="admin-shell">
+      <AdminInviteForm client:load />
+      <noscript><p class="admin-notice">Activa JavaScript para generar y copiar los enlaces personalizados.</p></noscript>
+    </div>
+  </main>
+</BaseLayout>
