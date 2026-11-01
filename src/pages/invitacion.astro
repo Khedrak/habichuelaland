@@ -1,10 +1,17 @@
----
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { InvitationCelebration } from '../components/InvitationExperience.jsx';
-import { invitationConfig } from '../lib/invitation.js';
-import '../styles/invitation.css';
----
-
-<BaseLayout title={`Nuestra revelación de género · ${invitationConfig.dateLabel}`} description={`Te esperamos para compartir una pequeña gran sorpresa el ${invitationConfig.dateLabel}.`} preloadImages={[{ href: '/assets/invitation-background-mobile-soft.webp', media: '(max-width: 600px)' }, { href: '/assets/invitation-background-desktop-soft.webp', media: '(min-width: 601px)' }, { href: '/assets/envelope-stationery-open.webp' }]}>
-  <InvitationCelebration client:load />
-</BaseLayout>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Abriendo tu invitación</title>
+  </head>
+  <body>
+    <p>Tu invitación está aquí: <a id="invitation-redirect" href="/">continuar a la invitación</a>.</p>
+    <script is:inline>
+      const destination = '/' + window.location.search + window.location.hash;
+      document.getElementById('invitation-redirect').href = destination;
+      window.location.replace(destination);
+    </script>
+  </body>
+</html>

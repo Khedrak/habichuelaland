@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { encodeGuestName, decodeGuestName, getConfirmationUrl, invitationConfig } from '../src/lib/invitation.js';
+import { createCalendarEvent, encodeGuestName, decodeGuestName, getConfirmationUrl, invitationConfig } from '../src/lib/invitation.js';
 
 test('guest tokens roundtrip Unicode with compact URL-safe characters', () => {
   for (const name of ['Gerardo', 'María José', '王小明', 'Familia 🌙', '<script>alert(1)</script>']) {
@@ -47,4 +47,11 @@ test('map links preserve the exact venue address', () => {
   assert.equal(directions.searchParams.get('query'), invitationConfig.address);
   assert.equal(embed.searchParams.get('q'), invitationConfig.address);
   assert.equal(embed.searchParams.get('output'), 'embed');
+});
+
+test('calendar event includes the configured date, local start time, and address', () => {
+  const event = createCalendarEvent();
+  assert.match(event, /DTSTART:20261128T190000Z/);
+  assert.match(event, /SUMMARY:Revelación de género/);
+  assert.match(event, /LOCATION:Alcalde Julio Arangua Nuñez Norte 399\\, Peñaflor/);
 });

@@ -18,11 +18,12 @@ const { title, description = 'Una invitación muy especial.', preloadImages = []
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#f7f1e8" />
 		<meta name="description" content={description} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<title>{title}</title>
 		{preloadImages.map(({ href, media }) => <link rel="preload" as="image" href={href} media={media} fetchpriority="high" />)}
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-		<link href="https://fonts.googleapis.com/css2?family=Allura&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=optional" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Allura&family=DM+Sans:wght@400;500;600;700&family=Lora:wght@400;500;600&family=Playfair+Display:wght@500;600&display=optional" rel="stylesheet" />
 	</head>
 	<body>
 		<slot />
@@ -32,6 +33,6 @@ const { title, description = 'Una invitación muy especial.', preloadImages = []
 </html>
 
 <style is:global>
-	html { min-width: 0; min-height: 100%; }
+	html { min-width: 0; min-height: 100%; scrollbar-gutter: stable; }
 	body { min-height: 100svh; }
 </style>

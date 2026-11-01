@@ -5,7 +5,6 @@ import { encodeGuestName, invitationConfig } from '../lib/invitation.js';
 export default function AdminInviteForm() {
   const reduced = useReducedMotion();
   const [guestName, setGuestName] = useState('');
-  const [guestPhone, setGuestPhone] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -32,18 +31,11 @@ export default function AdminInviteForm() {
       return;
     }
 
-    const phoneInput = guestPhone.trim();
-    const phone = phoneInput.replace(/[\s()+.-]/g, '');
-    if (phoneInput && (!/^\+?[\d\s().-]+$/.test(phoneInput) || !/^[1-9]\d{6,14}$/.test(phone))) {
-      setError('Revisa el teléfono: incluye el código de país y entre 7 y 15 dígitos.');
-      return;
-    }
-
     const url = new URL('/', window.location.origin);
     url.searchParams.set('n', encodeGuestName(name));
     const message = `Hola, ${name}. Queremos invitarte a nuestra revelación de género el ${invitationConfig.dateLabel}. Abre tu invitación aquí:\n${url.href}`;
     const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    setResult({ name, phone, url: url.href, message, isLocal });
+    setResult({ name, url: url.href, message, isLocal });
   };
 
   const copyLink = async () => {
@@ -81,11 +73,6 @@ export default function AdminInviteForm() {
           <label htmlFor="admin-guest-name">Nombre de la persona invitada</label>
           <input id="admin-guest-name" type="text" autoComplete="name" maxLength={100} value={guestName} onChange={(event) => { setGuestName(event.target.value); clearGeneratedLink(); }} placeholder="Ejemplo: María José" required />
         </div>
-        <div className="admin-field">
-          <label htmlFor="admin-guest-phone">WhatsApp de la persona <span>(opcional)</span></label>
-          <input id="admin-guest-phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={25} value={guestPhone} onChange={(event) => { setGuestPhone(event.target.value); clearGeneratedLink(); }} placeholder="+56 9 1234 5678" aria-describedby="admin-phone-help" />
-          <p id="admin-phone-help">Incluye el código de país si quieres preparar el envío por WhatsApp. Puedes generar el enlace sin un teléfono.</p>
-        </div>
         {error && <p className="admin-error" role="alert">{error}</p>}
         <button className="admin-button admin-button-primary" type="submit">Generar invitación <span aria-hidden="true">↗</span></button>
       </form>
@@ -101,7 +88,8 @@ export default function AdminInviteForm() {
             {canShare && <button type="button" className="admin-button admin-button-secondary" onClick={shareLink}>Compartir</button>}
             <a className="admin-text-link" href={result.url} target="_blank" rel="noopener noreferrer">Ver invitación <span aria-hidden="true">↗</span></a>
           </div>
-          {result.phone && <><a className="admin-button admin-button-primary admin-whatsapp" href={`https://wa.me/${result.phone}?text=${encodeURIComponent(result.message)}`} target="_blank" rel="noopener noreferrer">Enviar por WhatsApp <span aria-hidden="true">↗</span></a><p className="admin-share-help">No se envía ningún mensaje automáticamente: revisa y envía la invitación desde WhatsApp.</p></>}
+          <a className="admin-button admin-button-primary admin-whatsapp" href={`https://wa.me/?text=${encodeURIComponent(result.message)}`} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp <span aria-hidden="true">↗</span></a>
+          <p className="admin-share-help">WhatsApp se abrirá con el mensaje preparado; elige el contacto y envíalo manualmente.</p>
         </motion.section>
       )}
       <p className="admin-feedback" role="status" aria-live="polite">{feedback}</p>

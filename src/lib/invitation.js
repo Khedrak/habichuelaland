@@ -36,3 +36,14 @@ export function getConfirmationUrl(guest) {
   const message = `${introduction} Confirmo mi asistencia a la revelación de género del ${invitationConfig.dateLabel} a las ${invitationConfig.timeLabel}. ¡Qué emoción acompañarlos!`;
   return `https://wa.me/${invitationConfig.phone}?text=${encodeURIComponent(message)}`;
 }
+
+export function createCalendarEvent() {
+  const escape = value => String(value).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+  const start = new Date(invitationConfig.dateTime).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Habichuelaland//Invitacion//ES', 'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT', `UID:gender-reveal-${start}@habichuelaland`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`,
+    `DTSTART:${start}`, 'SUMMARY:Revelación de género', `LOCATION:${escape(invitationConfig.address)}`,
+    `DESCRIPTION:${escape(`Celebración de revelación de género. ${invitationConfig.timeLabel}.`)}`, 'END:VEVENT', 'END:VCALENDAR', ''
+  ].join('\r\n');
+}
