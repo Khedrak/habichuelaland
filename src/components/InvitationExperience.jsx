@@ -102,65 +102,39 @@ function BalloonTransition({ onMidpoint, onComplete }) {
 
 function MusicToggle() {
   const [playing, setPlaying] = useState(false);
+  const [volume, setVolume] = useState(55);
   const audioRef = useRef(null);
-  const timerRef = useRef(null);
-  const noteIndexRef = useRef(0);
-  const notes = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 698.46, 523.25, 659.25, 783.99, 1046.5, 880, 783.99, 659.25, 587.33];
-
-  const playNote = (frequency, start, duration, volume = 0.035) => {
-    const context = audioRef.current;
-    if (!context) return;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = 'sine';
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(volume, start + 0.04);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    oscillator.connect(gain).connect(context.destination);
-    oscillator.start(start);
-    oscillator.stop(start + duration + 0.02);
-  };
-
-  const playPhrase = () => {
-    const context = audioRef.current;
-    if (!context) return;
-    const start = context.currentTime + 0.08;
-    const index = noteIndexRef.current;
-    for (let step = 0; step < notes.length; step++) {
-      const note = notes[(step + index) % notes.length];
-      const at = start + step * 0.42;
-      playNote(note, at, 0.9);
-      if (step % 4 === 0) playNote(note / 2, at, 1.45, 0.018);
-    }
-    noteIndexRef.current = (index + 5) % notes.length;
-  };
-
+  const startedRef = useRef(false);
+  const reduced = useReducedMotion();
   const toggleMusic = async () => {
     if (playing) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
-      await audioRef.current?.suspend();
+      audioRef.current?.pause();
       setPlaying(false);
       return;
     }
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    audioRef.current ??= new AudioContextClass();
-    await audioRef.current.resume();
-    playPhrase();
-    timerRef.current = window.setInterval(playPhrase, notes.length * 420);
-    setPlaying(true);
+    try {
+      const audio = audioRef.current;
+      if (audio && audio.readyState < 1) {
+        await new Promise((resolve, reject) => {
+          audio.addEventListener('loadedmetadata', resolve, { once: true });
+          audio.addEventListener('error', reject, { once: true });
+          audio.load();
+        });
+      }
+      if (audio && !startedRef.current) audio.currentTime = Math.min(4, Math.max(0, audio.duration - 0.1));
+      await audio?.play();
+      startedRef.current = true;
+      setPlaying(true);
+    }
+    catch (error) { console.error('Could not play the invitation music.', error); setPlaying(false); }
   };
 
-  useEffect(() => () => {
-    window.clearInterval(timerRef.current);
-    audioRef.current?.close();
-  }, []);
-
-  return <button className="music-toggle" type="button" onClick={toggleMusic} aria-pressed={playing} aria-label={playing ? 'Desactivar música' : 'Activar música'} title={playing ? 'Desactivar música' : 'Activar música'}>
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2Zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2ZM9 9l12-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />{!playing && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}</svg>
-  </button>;
+  return <><audio ref={audioRef} src={`${assets}You%27ll%20Be%20in%20My%20Heart.mp3`} loop preload="metadata" onEnded={() => setPlaying(false)} volume={volume / 100} />
+    <div className="music-control">
+      {playing && <div className="music-volume"><input type="range" min="0" max="100" step="1" value={volume} aria-label="Nivel de audio" onChange={(event) => { const next = Number(event.currentTarget.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /></div>}
+    <motion.button className="music-toggle" type="button" onClick={toggleMusic} aria-pressed={playing} aria-label={playing ? 'Desactivar música' : 'Activar música'} title={playing ? 'Desactivar música' : 'Activar música'} animate={reduced || playing ? { x: 0, rotate: 0 } : { x: [0, -1.5, 1.5, -0.8, 0], rotate: [0, -0.45, 0.45, -0.25, 0] }} transition={!reduced && !playing ? { x: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' }, rotate: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' } } : { duration: 0.2 }}>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-3 3-3 3 .9 3 2Zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2ZM9 9l12-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />{!playing && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}</svg>
+    </motion.button></div></>;
 }
 
 function Reveal({ children, className = '' }) {
@@ -168,9 +142,10 @@ function Reveal({ children, className = '' }) {
   return <motion.div className={className} initial={reduced ? false : { y: 5, opacity: 0.98 }} whileInView={reduced ? undefined : { y: 0, opacity: 1 }} viewport={{ once: true, amount: 0.18 }} transition={{ duration: 0.55, ease: [0.2, 0.65, 0.3, 1] }}>{children}</motion.div>;
 }
 
-function TextReveal({ as = 'p', children, delay = 0, ...props }) {
+function TextReveal({ as = 'p', children, delay = 0, immediate = false, ...props }) {
   const reduced = useReducedMotion();
   const Element = motion[as];
+  if (immediate) return <Element {...props}>{children}</Element>;
   return <Element {...props} initial={reduced ? false : { opacity: 0, y: 7 }} whileInView={reduced ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: reduced ? 0.1 : 0.65, delay: reduced ? 0 : delay, ease: [0.2, 0.65, 0.3, 1] }}>{children}</Element>;
 }
 
@@ -184,6 +159,19 @@ function EnvelopeOpening({ guest, onOpened }) {
   const cardVisible = phase === 'card' || phase === 'revealed';
   const openVisible = phase === 'open' || cardVisible;
   const changePhase = (next) => { phaseRef.current = next; setPhase(next); };
+
+  useEffect(() => {
+    const preload = [
+      'envelope-stationery-open.webp', 'teddy-welcome.webp', 'teddy-thinking-back.webp',
+      'invitation-background-mobile-soft.webp', 'invitation-background-desktop-soft.webp',
+    ];
+    preload.forEach((src) => { const image = new Image(); image.src = `${assets}${src}`; });
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'open') changePhase('card');
+    else if (phase === 'card') { changePhase('revealed'); onOpened(); }
+  }, [phase]);
 
   const beginOpening = () => {
     if (phaseRef.current !== 'closed') return;
@@ -208,12 +196,12 @@ function EnvelopeOpening({ guest, onOpened }) {
           <motion.button className="opening-trigger" type="button" onClick={beginOpening} disabled={phase !== 'closed'} aria-label="Abrir la invitación" aria-hidden={openVisible ? true : undefined} initial={false} animate={{ opacity: openVisible ? 0 : 1, y: reduced || phase === 'closed' ? 0 : -lift }} transition={{ duration: reduced ? 0.1 : 1.2, ease: [0.22, 0.75, 0.25, 1] }} onAnimationComplete={() => { if (phaseRef.current === 'lifting') changePhase('balloons'); }}>
             <motion.img className="closed-envelope" src={`${assets}envelope-stationery-closed.webp`} width="1612" height="975" alt="Sobre cerrado con un sello de cera con lazo" fetchPriority="high" animate={reduced ? { x: 0, rotate: 0 } : phase === 'closed' ? { x: [0, -2, 2, -1, 0], rotate: [0, -0.55, 0.55, -0.3, 0] } : { x: 0, rotate: 0 }} transition={phase === 'closed' && !reduced ? { x: { duration: 0.65, delay: 2, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }, rotate: { duration: 0.65, delay: 2, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' } } : { duration: 0.2, ease: 'easeOut' }} />
           </motion.button>
-          <motion.div className="opening-open-envelope" style={{ y: reduced ? 0 : -lift }} initial={{ opacity: 0 }} animate={{ opacity: openVisible ? 1 : 0 }} transition={{ duration: reduced ? 0.08 : 0.35 }} aria-hidden={!openVisible} onAnimationComplete={() => { if (phaseRef.current === 'open') changePhase('card'); }}>
+          <div className="opening-open-envelope" style={{ transform: `translateY(${reduced ? 0 : -lift}px)` }} aria-hidden={!openVisible}>
             <img className="open-envelope" src={`${assets}envelope-stationery-open.webp`} width="1374" height="1145" alt="El mismo sobre, ahora abierto" loading="eager" />
-          </motion.div>
-          {cardVisible && <motion.article className="invitation-letter opening-letter" initial={{ opacity: 0, y: reduced ? 0 : -lift + 12, rotate: reduced ? 0 : -5 }} animate={{ opacity: 1, y: reduced ? 0 : -lift, rotate: reduced ? 0 : -1.7 }} transition={{ duration: reduced ? 0.12 : 0.85, delay: reduced ? 0.05 : 0.25, ease: [0.22, 0.65, 0.3, 1] }} onAnimationComplete={() => { if (phaseRef.current === 'card') { changePhase('revealed'); onOpened(); } }}>
-            <TextReveal delay={0.08}>Para</TextReveal><TextReveal as="h2" delay={0.14} className="guest-name" style={{ '--guest-name-fit-size': `${guestNameSize}px` }}>{guest}</TextReveal><span className="letter-rule" aria-hidden="true" /><TextReveal delay={0.22}>Te invitamos a nuestra</TextReveal><TextReveal as="h3" delay={0.3}>Revelación<br /><em>de género</em></TextReveal><TextReveal delay={0.38} className="letter-date">{invitationConfig.dateLabel}</TextReveal><TextReveal delay={0.44} className="letter-time">{invitationConfig.timeLabel}</TextReveal>
-          </motion.article>}
+          </div>
+          {cardVisible && <article className="invitation-letter opening-letter" style={{ transform: `translateY(${reduced ? 0 : -lift}px) rotate(-1.7deg)` }}>
+            <TextReveal immediate>Para</TextReveal><TextReveal immediate as="h2" className="guest-name" style={{ '--guest-name-fit-size': `${guestNameSize}px` }}>{guest}</TextReveal><span className="letter-rule" aria-hidden="true" /><TextReveal immediate>Te invitamos a nuestra</TextReveal><TextReveal immediate as="h3">Revelación<br /><em>de género</em></TextReveal><TextReveal immediate className="letter-date">{invitationConfig.dateLabel}</TextReveal><TextReveal immediate className="letter-time">{invitationConfig.timeLabel}</TextReveal>
+          </article>}
         </motion.div>
         <FloatingArt src="teddy-thinking-back.webp" className="opening-teddy-reading" speed={0} delay={0.5} float={3} loading="eager" />
         <FloatingArt src="teddy-welcome.webp" className="opening-teddy-card" speed={0} delay={0.5} float={3} loading="eager" />
