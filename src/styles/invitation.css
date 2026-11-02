@@ -303,6 +303,7 @@ main { overflow: clip; }
   .opening-stage { margin-top: 8px; margin-bottom: 72px; }
   .opening-teddy-reading, .opening-teddy-card { width: clamp(120px, 32vw, 145px); left: -10%; right: auto; bottom: -30%; z-index: 4; }
   .opening-teddy-reading { left: -9%; bottom: -28%; }
+  .opening-teddy-card { left: calc(-10% - 100px + 20vw); bottom: min(0px, calc(-30% + 50vw - 160px)); }
   .opening-cue-slot { height: 72px; min-height: 72px; margin-top: 0; transform: translateY(52px); }
   .opening-down-cue { width: 72px; height: 72px; font-size: 44px; font-weight: 600; -webkit-text-stroke: 1px currentColor; }
 }
