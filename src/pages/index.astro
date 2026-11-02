@@ -2,6 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { InvitationExperience } from '../components/InvitationExperience.jsx';
 import '../styles/invitation.css';
+
+export const prerender = true;
 ---
 
 <BaseLayout title="Una invitación para ti" description="Hay una pequeña gran sorpresa que queremos compartir contigo. Abre tu invitación." preloadImages={[{ href: '/assets/invitation-background-mobile-soft.webp', media: '(max-width: 600px)' }, { href: '/assets/invitation-background-desktop-soft.webp', media: '(min-width: 601px)' }, { href: '/assets/envelope-stationery-closed.webp' }, { href: '/assets/envelope-stationery-open.webp' }, { href: '/assets/balloon-curtain-mobile.webp', media: '(max-width: 600px)' }, { href: '/assets/balloon-curtain-desktop.webp', media: '(min-width: 601px)' }]}>
