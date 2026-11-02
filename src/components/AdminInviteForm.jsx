@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { encodeGuestName, invitationConfig } from '../lib/invitation.js';
+import { encodeGuestName, invitationConfig, toTitleCaseName } from '../lib/invitation.js';
 
 export default function AdminInviteForm() {
   const reduced = useReducedMotion();
@@ -25,11 +25,12 @@ export default function AdminInviteForm() {
     event.preventDefault();
     setError('');
     setFeedback('');
-    const name = guestName.trim();
-    if (!name || name.length > 100 || /[\u0000-\u001f\u007f]/.test(name)) {
+    const rawName = guestName.trim();
+    if (!rawName || rawName.length > 100 || /[\u0000-\u001f\u007f]/.test(rawName)) {
       setError('Escribe un nombre válido de hasta 100 caracteres.');
       return;
     }
+    const name = toTitleCaseName(rawName);
 
     const url = new URL('/', window.location.origin);
     url.searchParams.set('n', encodeGuestName(name));

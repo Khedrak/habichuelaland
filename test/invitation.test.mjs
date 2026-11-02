@@ -1,13 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCalendarEvent, encodeGuestName, decodeGuestName, getConfirmationUrl, invitationConfig } from '../src/lib/invitation.js';
+import { createCalendarEvent, encodeGuestName, decodeGuestName, getConfirmationUrl, invitationConfig, toTitleCaseName } from '../src/lib/invitation.js';
 
 test('guest tokens roundtrip Unicode with compact URL-safe characters', () => {
   for (const name of ['Gerardo', 'María José', '王小明', 'Familia 🌙', '<script>alert(1)</script>']) {
     const token = encodeGuestName(name);
     assert.match(token, /^[A-Za-z0-9_-]+$/);
-    assert.equal(decodeGuestName(token), name);
+    assert.equal(decodeGuestName(token), toTitleCaseName(name));
   }
+});
+
+test('guest names are title-cased across words, accents, and hyphens', () => {
+  assert.equal(toTitleCaseName('  mARÍA   jOsÉ DE la  o  '), 'María   José De La  O');
+  assert.equal(toTitleCaseName('ana-maría d’ávila'), 'Ana-María D’Ávila');
+  assert.equal(decodeGuestName(encodeGuestName('fAbIaN uRbInA')), 'Fabian Urbina');
 });
 
 test('malformed, excessive and empty tokens use a friendly fallback', () => {

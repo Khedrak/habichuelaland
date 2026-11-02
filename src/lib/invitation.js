@@ -19,12 +19,20 @@ export const invitationConfig = {
 };
 
 // Tokens obscure names in shared links; they are not encryption or access control.
+export function toTitleCaseName(name) {
+  return String(name ?? '')
+    .normalize('NFC')
+    .trim()
+    .toLocaleLowerCase('es-CL')
+    .replace(/(^|[\s\-'’])(\p{L})/gu, (_, separator, letter) => separator + letter.toLocaleUpperCase('es-CL'));
+}
+
 export function decodeGuestName(token) {
   if (!token || token.length > 512 || !/^[A-Za-z0-9_-]+={0,2}$/.test(token)) return invitationConfig.defaultGuest;
   try {
     const bytes = Uint8Array.from(atob(token.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
     const name = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim();
-    return name && name.length <= 100 && !/[\u0000-\u001f\u007f]/.test(name) ? name : invitationConfig.defaultGuest;
+    return name && name.length <= 100 && !/[\u0000-\u001f\u007f]/.test(name) ? toTitleCaseName(name) : invitationConfig.defaultGuest;
   } catch { return invitationConfig.defaultGuest; }
 }
 export function encodeGuestName(name) {
