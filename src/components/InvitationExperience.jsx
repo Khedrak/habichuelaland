@@ -1,5 +1,6 @@
 import { createContext, Fragment, useContext, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { createCalendarEvent, decodeGuestName, getConfirmationUrl, invitationConfig } from '../lib/invitation.js';
 
 const SceneProgress = createContext(null);
@@ -25,14 +26,141 @@ function Scene({ className = '', children, id, label, background = 'paper' }) {
   </section>;
 }
 
-function FloatingArt({ src, className = '', speed = 45, delay = 0, float = 9, phase = [0, 1], damping = 25, loading = 'lazy', driftDirection = 0, flipX = false }) {
+function FloatingArt({ src, className = '', speed = 45, delay = 0, float = 9, phase = [0, 1], damping = 25, loading = 'lazy', driftDirection = 0, flipX = false, spin = false }) {
   const progress = useContext(SceneProgress);
   const reduced = useReducedMotion();
   const offset = useTransform(progress, phase, [speed * 0.55, -speed * 0.55]);
   const y = useSpring(offset, { stiffness: 70, damping, mass: 0.7 });
-  return <motion.div className={`floating-art ${className}`} style={{ y: reduced ? 0 : y }} animate={reduced || !driftDirection ? undefined : { x: ['0vw', `${driftDirection * 110}vw`, '0vw'] }} transition={driftDirection ? { x: { duration: 58, delay, ease: 'linear', repeat: Infinity } } : undefined} aria-hidden="true">
-    <motion.img className={flipX ? 'floating-art-flipped' : undefined} src={`${assets}${src}`} alt="" loading={loading} animate={reduced ? undefined : { y: [0, -float, 0], rotate: [-1, 1, -1] }} transition={{ duration: 7 + delay, delay, ease: 'easeInOut', repeat: Infinity }} />
+  return <motion.div className={`floating-art ${className}`} style={{ y: reduced ? 0 : y }} animate={reduced || !driftDirection ? undefined : { x: driftDirection > 0 ? ['-115vw', '115vw'] : ['115vw', '-115vw'] }} transition={driftDirection ? { x: { duration: 58, delay, ease: 'linear', repeat: Infinity } } : undefined} aria-hidden="true">
+    <motion.img className={flipX ? 'floating-art-flipped' : undefined} src={`${assets}${src}`} alt="" loading={loading} animate={reduced ? undefined : { y: [0, -float, 0], rotate: spin ? [0, 360] : [-1, 1, -1] }} transition={{ duration: spin ? 24 + delay : 7 + delay, delay, ease: spin ? 'linear' : 'easeInOut', repeat: Infinity }} />
   </motion.div>;
+}
+
+function HotAirBalloon({ className = '', direction = 1, delay = 0 }) {
+  const progress = useContext(SceneProgress);
+  const reduced = useReducedMotion();
+  const x = useSpring(useTransform(progress, [0, 1], direction === 1 ? [-48, 72] : [48, -72]), { stiffness: 55, damping: 28 });
+  const y = useSpring(useTransform(progress, [0, 1], [64, -64]), { stiffness: 55, damping: 28 });
+  return <motion.div className={`floating-art hot-air-balloon ${className}`} style={reduced ? undefined : { x, y }} aria-hidden="true">
+    <motion.img src={`${assets}hot-air-balloon-watercolor.webp`} alt="" loading="lazy" animate={reduced ? undefined : { y: [0, -9, 0], rotate: [-1.5, 1.5, -1.5] }} transition={{ duration: 8.5, delay, repeat: Infinity, ease: 'easeInOut' }} />
+  </motion.div>;
+}
+
+function BalloonBouquet({ className = '', colors = ['gold', 'ivory', 'taupe', 'cocoa'], loading = 'lazy' }) {
+  const speeds = [18, -16, 23, -20];
+  const floatAmplitudes = [14, 22, 18, 26];
+  return <div className={`balloon-bouquet ${className}`} aria-hidden="true">
+    {colors.map((color, index) => <FloatingArt key={`${color}-${index}`} src={`balloon-${color}.png`} className={`balloon-single balloon-slot-${index + 1}`} speed={speeds[index]} delay={index * 0.7} float={floatAmplitudes[index]} loading={loading} />)}
+  </div>;
+}
+
+function BalloonTransition({ onMidpoint, onComplete }) {
+  const sheetRef = useRef(null);
+  const [sheet, setSheet] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const mobile = window.matchMedia('(max-width: 600px)').matches;
+    const image = new Image();
+    image.src = `${assets}balloon-curtain-${mobile ? 'mobile' : 'desktop'}.webp`;
+    image.decode().then(() => {
+      if (cancelled) return;
+      const viewportHeight = window.innerHeight;
+      const ratio = image.naturalWidth / image.naturalHeight;
+      const width = mobile ? window.innerWidth * 1.5 : Math.max(window.innerWidth * 1.25, viewportHeight * ratio * 1.25);
+      const height = width / ratio;
+      setSheet({ src: image.src, width, height, start: viewportHeight + 1, center: (viewportHeight - height) / 2, end: -height - 1 });
+    }).catch(() => {
+      if (!cancelled) { onMidpoint(); onComplete(); }
+    });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    if (!sheet || !sheetRef.current) return;
+    const duration = 4800;
+    const animation = sheetRef.current.animate([
+      { transform: `translate3d(-50%, ${sheet.start}px, 0)` },
+      { transform: `translate3d(-50%, ${sheet.end}px, 0)` },
+    ], { duration, easing: 'linear', fill: 'forwards' });
+    let frame;
+    const checkMidpoint = () => {
+      if (Number(animation.currentTime) >= duration / 2) {
+        onMidpoint();
+      } else {
+        frame = requestAnimationFrame(checkMidpoint);
+      }
+    };
+    frame = requestAnimationFrame(checkMidpoint);
+    animation.onfinish = onComplete;
+    return () => { cancelAnimationFrame(frame); animation.cancel(); };
+  }, [sheet]);
+  if (!sheet || typeof document === 'undefined') return null;
+  return createPortal(<div className="balloon-transition" aria-hidden="true"><div ref={sheetRef} className="balloon-transition-sheet"
+    style={{ width: sheet.width, height: sheet.height, transform: `translate3d(-50%, ${sheet.start}px, 0)` }}>
+    <img src={sheet.src} alt="" />
+  </div></div>, document.body);
+}
+
+function MusicToggle() {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const timerRef = useRef(null);
+  const noteIndexRef = useRef(0);
+  const notes = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 698.46, 523.25, 659.25, 783.99, 1046.5, 880, 783.99, 659.25, 587.33];
+
+  const playNote = (frequency, start, duration, volume = 0.035) => {
+    const context = audioRef.current;
+    if (!context) return;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.02);
+  };
+
+  const playPhrase = () => {
+    const context = audioRef.current;
+    if (!context) return;
+    const start = context.currentTime + 0.08;
+    const index = noteIndexRef.current;
+    for (let step = 0; step < notes.length; step++) {
+      const note = notes[(step + index) % notes.length];
+      const at = start + step * 0.42;
+      playNote(note, at, 0.9);
+      if (step % 4 === 0) playNote(note / 2, at, 1.45, 0.018);
+    }
+    noteIndexRef.current = (index + 5) % notes.length;
+  };
+
+  const toggleMusic = async () => {
+    if (playing) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+      await audioRef.current?.suspend();
+      setPlaying(false);
+      return;
+    }
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    audioRef.current ??= new AudioContextClass();
+    await audioRef.current.resume();
+    playPhrase();
+    timerRef.current = window.setInterval(playPhrase, notes.length * 420);
+    setPlaying(true);
+  };
+
+  useEffect(() => () => {
+    window.clearInterval(timerRef.current);
+    audioRef.current?.close();
+  }, []);
+
+  return <button className="music-toggle" type="button" onClick={toggleMusic} aria-pressed={playing} aria-label={playing ? 'Desactivar música' : 'Activar música'} title={playing ? 'Desactivar música' : 'Activar música'}>
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2Zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2ZM9 9l12-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />{!playing && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}</svg>
+  </button>;
 }
 
 function Reveal({ children, className = '' }) {
@@ -50,6 +178,7 @@ function EnvelopeOpening({ guest, onOpened }) {
   const reduced = useReducedMotion();
   const guestNameSize = Math.max(32, Math.min(72, 1450 / Math.max([...guest.trim()].length, 1)));
   const [phase, setPhase] = useState('closed');
+  const [showBalloonCurtain, setShowBalloonCurtain] = useState(false);
   const phaseRef = useRef('closed');
   const [lift, setLift] = useState(48);
   const cardVisible = phase === 'card' || phase === 'revealed';
@@ -59,22 +188,24 @@ function EnvelopeOpening({ guest, onOpened }) {
   const beginOpening = () => {
     if (phaseRef.current !== 'closed') return;
     setLift(Math.min(64, window.innerHeight * 0.07));
+    if (!reduced) setShowBalloonCurtain(true);
     changePhase(reduced ? 'open' : 'lifting');
   };
 
   return <Scene className={`opening-scene opening-phase-${phase}`} id="inicio" label="Tu invitación personal">
     <FloatingArt src="cloud.webp" className="welcome-cloud-left" speed={22} driftDirection={1} loading="eager" />
     <FloatingArt src="cloud.webp" className="welcome-cloud-right" speed={-22} delay={1.5} phase={[0.15, 0.85]} driftDirection={-1} loading="eager" />
-    <FloatingArt src="star.webp" className="welcome-star" speed={28} delay={2} loading="eager" />
-    <FloatingArt src="star.webp" className="welcome-star-secondary" speed={-18} delay={1.2} float={6} loading="eager" />
+    <FloatingArt src="star.webp" className="welcome-star" speed={28} delay={2} loading="eager" spin />
+    <FloatingArt src="star.webp" className="welcome-star-secondary" speed={-18} delay={1.2} float={6} loading="eager" spin />
     <FloatingArt src="moon.webp" className="welcome-moon" speed={14} delay={2.4} float={8} loading="eager" />
-    <FloatingArt src="balloons-gold.webp" className="welcome-balloons" speed={-90} delay={1} phase={[0.2, 0.9]} loading="eager" />
+    <BalloonBouquet className="welcome-bouquet" colors={['gold', 'ivory', 'taupe']} loading="eager" />
+    <HotAirBalloon className="welcome-hot-air" direction={1} delay={0.8} />
     <div className="opening-content">
       <motion.p className="opening-kicker" initial={reduced ? false : { opacity: 0, y: 10 }} animate={{ opacity: phase === 'closed' ? 1 : 0, y: phase === 'closed' ? 0 : -8 }} transition={{ duration: reduced ? 0.1 : 0.6, delay: reduced ? 0 : 0.1 }}>Una noticia llena de amor</motion.p>
       <motion.h1 className="opening-title" initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: phase === 'closed' ? 1 : 0, y: reduced || phase === 'closed' ? 0 : -12 }} transition={{ duration: reduced ? 0.1 : 0.7, ease: [0.22, 0.65, 0.3, 1] }}>Tienes una<br /><em>invitación</em></motion.h1>
       <div className="opening-stage envelope-frame" data-phase={phase}>
         <motion.div className="opening-artwork" initial={false}>
-          <motion.button className="opening-trigger" type="button" onClick={beginOpening} disabled={phase !== 'closed'} aria-label="Abrir la invitación" aria-hidden={openVisible ? true : undefined} initial={false} animate={{ opacity: openVisible ? 0 : 1, y: reduced || phase === 'closed' ? 0 : -lift }} transition={{ duration: reduced ? 0.1 : 1.2, ease: [0.22, 0.75, 0.25, 1] }} onAnimationComplete={() => { if (phaseRef.current === 'lifting') changePhase('open'); }}>
+          <motion.button className="opening-trigger" type="button" onClick={beginOpening} disabled={phase !== 'closed'} aria-label="Abrir la invitación" aria-hidden={openVisible ? true : undefined} initial={false} animate={{ opacity: openVisible ? 0 : 1, y: reduced || phase === 'closed' ? 0 : -lift }} transition={{ duration: reduced ? 0.1 : 1.2, ease: [0.22, 0.75, 0.25, 1] }} onAnimationComplete={() => { if (phaseRef.current === 'lifting') changePhase('balloons'); }}>
             <motion.img className="closed-envelope" src={`${assets}envelope-stationery-closed.webp`} width="1612" height="975" alt="Sobre cerrado con un sello de cera con lazo" fetchPriority="high" animate={reduced ? { x: 0, rotate: 0 } : phase === 'closed' ? { x: [0, -2, 2, -1, 0], rotate: [0, -0.55, 0.55, -0.3, 0] } : { x: 0, rotate: 0 }} transition={phase === 'closed' && !reduced ? { x: { duration: 0.65, delay: 2, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }, rotate: { duration: 0.65, delay: 2, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' } } : { duration: 0.2, ease: 'easeOut' }} />
           </motion.button>
           <motion.div className="opening-open-envelope" style={{ y: reduced ? 0 : -lift }} initial={{ opacity: 0 }} animate={{ opacity: openVisible ? 1 : 0 }} transition={{ duration: reduced ? 0.08 : 0.35 }} aria-hidden={!openVisible} onAnimationComplete={() => { if (phaseRef.current === 'open') changePhase('card'); }}>
@@ -93,6 +224,7 @@ function EnvelopeOpening({ guest, onOpened }) {
         {phase === 'revealed' && <motion.a className="opening-down-cue" href="#historia" aria-label="Desplazarse para ver más detalles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0.1 : 0.5 }}><motion.span aria-hidden="true" animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>↓</motion.span></motion.a>}
       </div>
     </div>
+    {showBalloonCurtain && <BalloonTransition onMidpoint={() => changePhase('open')} onComplete={() => setShowBalloonCurtain(false)} />}
   </Scene>;
 }
 
@@ -119,6 +251,7 @@ export function InvitationExperience() {
     return () => observer.disconnect();
   }, [opened]);
   return <main className="experience-page" data-opened={opened}>
+    <MusicToggle />
     <EnvelopeOpening guest={guest} onOpened={() => setOpened(true)} />
     {opened && <><motion.div className="invitation-details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0.1 : 0.7 }}><InvitationSections guest={guest} /></motion.div><motion.a className="rsvp-floating" href={getConfirmationUrl(guest)} target="_blank" rel="noopener noreferrer" aria-label="Confirmar asistencia por WhatsApp" aria-hidden={floatingHidden} tabIndex={floatingHidden ? -1 : 0} initial={{ opacity: 0, y: 10 }} animate={{ opacity: floatingHidden ? 0 : 1, y: floatingHidden ? 10 : 0 }} style={{ pointerEvents: floatingHidden ? 'none' : 'auto' }} transition={{ duration: reduced ? 0.1 : 0.4 }}><svg className="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.88 11.88 0 0 0 12.04 0C5.44 0 .06 5.37.06 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.18-1.62a11.98 11.98 0 0 0 5.86 1.49h.01c6.6 0 11.98-5.37 11.98-11.98a11.9 11.9 0 0 0-3.51-8.41ZM12.04 21.85a9.9 9.9 0 0 1-5.05-1.38l-.36-.21-3.67.96.98-3.57-.24-.37a9.88 9.88 0 0 1-1.52-5.3c0-5.49 4.47-9.96 9.96-9.96 2.66 0 5.15 1.04 7.03 2.92a9.87 9.87 0 0 1 2.92 7.04c0 5.49-4.47 9.95-9.95 9.95Zm5.46-7.45c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35Z" /></svg><span>Confirmar asistencia</span></motion.a></>}
   </main>;
@@ -162,9 +295,11 @@ function InvitationSections({ guest }) {
   return <>
     <Scene className="story-scene" id="historia" label="Nuestra pequeña gran noticia" background="plain">
       <FloatingArt src="cloud.webp" className="story-cloud-top" speed={24} delay={1} phase={[0, 0.8]} driftDirection={-1} />
-      <FloatingArt src="moon.webp" className="story-moon" speed={-65} delay={2} float={12} phase={[0.2, 1]} />
-      <FloatingArt src="star.webp" className="story-star-left" speed={45} float={5} />
-      <FloatingArt src="star.webp" className="story-star-right" speed={-90} delay={1} phase={[0.1, 0.7]} />
+      <FloatingArt src="moon.webp" className="story-moon" speed={-35} delay={2} float={12} phase={[0.2, 1]} />
+      <FloatingArt src="star.webp" className="story-star-left" speed={45} float={5} spin />
+      <FloatingArt src="star.webp" className="story-star-right" speed={-90} delay={1} phase={[0.1, 0.7]} spin />
+      <BalloonBouquet className="story-bouquet" colors={['taupe', 'cocoa', 'ivory']} />
+      <HotAirBalloon className="story-hot-air" direction={-1} delay={1.1} />
       <div className="story-composition">
         <figure className="ultrasound-easel">
           <div className="ultrasound-easel-frame"><img src={`${assets}ultrasound-first-look.webp`} width="1200" height="860" alt="Ecografía de nuestro bebé creciendo en el vientre." loading="lazy" /></div>
@@ -174,6 +309,8 @@ function InvitationSections({ guest }) {
       </div>
     </Scene>
     <Scene className="expecting-scene" id="preparativos" label="Preparativos llenos de amor">
+      <BalloonBouquet className="expecting-bouquet" colors={['ivory', 'gold', 'cocoa']} />
+      <HotAirBalloon className="expecting-hot-air" direction={1} delay={1.6} />
       <Reveal className="expecting-content">
         <TextReveal as="h2">Todo lo que hacemos<br /><em>ya es pensando en ti</em></TextReveal>
         <TextReveal className="expecting-intro" delay={0.1}>Entre pequeños preparativos y sueños compartidos, tu llegada ya llena de amor cada rincón de nuestra vida.</TextReveal>
@@ -187,9 +324,10 @@ function InvitationSections({ guest }) {
         </div>
       </Reveal>
     </Scene>
-    <Scene className="details-scene" id="detalles" label="Los detalles de nuestra celebración">
+    <Scene className="details-scene" id="detalles" label="Los detalles de nuestra celebración" background="plain">
       <FloatingArt src="cloud.webp" className="details-cloud" speed={22} delay={1} driftDirection={1} />
-      <FloatingArt src="balloons-gold.webp" className="details-balloons" speed={-115} delay={1} phase={[0.1, 0.75]} damping={35} />
+      <BalloonBouquet className="details-bouquet" colors={['gold', 'taupe', 'cocoa', 'ivory']} />
+      <HotAirBalloon className="details-hot-air" direction={-1} delay={1.4} />
       <Reveal className="details-content">
         <TextReveal as="h2">Guarda esta <em>fecha</em></TextReveal>
         <TextReveal as="div" className="event-date" delay={0.1}><span className="event-day">{invitationConfig.day}</span><div><span>{invitationConfig.weekday}</span><strong>{invitationConfig.month}</strong><span>de {invitationConfig.year}</span></div></TextReveal>
@@ -202,10 +340,12 @@ function InvitationSections({ guest }) {
         <Countdown />
       </Reveal>
     </Scene>
-    <Scene className="rsvp-scene" id="confirmar" label="Confirma tu asistencia" background="plain">
+    <Scene className="rsvp-scene" id="confirmar" label="Confirma tu asistencia">
       <FloatingArt src="cloud.webp" className="rsvp-cloud-left" speed={-22} driftDirection={1} />
       <FloatingArt src="cloud.webp" className="rsvp-cloud-right" speed={22} delay={2} phase={[0.15, 1]} driftDirection={-1} />
-      <FloatingArt src="star.webp" className="rsvp-star" speed={35} delay={1} float={6} />
+      <FloatingArt src="star.webp" className="rsvp-star" speed={35} delay={1} float={6} spin />
+      <BalloonBouquet className="rsvp-bouquet" colors={['ivory', 'gold', 'taupe']} />
+      <HotAirBalloon className="rsvp-hot-air" direction={1} delay={2} />
         <Reveal className="rsvp-content"><TextReveal as="h2">¿Nos acompañas<br /><em>a descubrirlo?</em></TextReveal><TextReveal delay={0.12}>Nos hace mucha ilusión celebrar contigo.<br />Cuéntanos por WhatsApp si podremos abrazarte ese día.</TextReveal><motion.a className="rsvp-button" href={getConfirmationUrl(guest)} target="_blank" rel="noopener noreferrer" initial={reduced ? false : { opacity: 0, y: 7 }} whileInView={reduced ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: reduced ? 0.1 : 0.65, delay: 0.2, ease: [0.2, 0.65, 0.3, 1] }} whileHover={reduced ? undefined : { y: -3 }} whileTap={reduced ? undefined : { scale: 0.98 }}><svg className="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.88 11.88 0 0 0 12.04 0C5.44 0 .06 5.37.06 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.18-1.62a11.98 11.98 0 0 0 5.86 1.49h.01c6.6 0 11.98-5.37 11.98-11.98a11.9 11.9 0 0 0-3.51-8.41ZM12.04 21.85a9.9 9.9 0 0 1-5.05-1.38l-.36-.21-3.67.96.98-3.57-.24-.37a9.88 9.88 0 0 1-1.52-5.3c0-5.49 4.47-9.96 9.96-9.96 2.66 0 5.15 1.04 7.03 2.92a9.87 9.87 0 0 1 2.92 7.04c0 5.49-4.47 9.95-9.95 9.95Zm5.46-7.45c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35Z" /></svg><span>Confirmar mi asistencia</span><span className="rsvp-arrow" aria-hidden="true">↗</span></motion.a><TextReveal as="a" className="back-link" href="#inicio" delay={0.3}>Volver al inicio</TextReveal></Reveal>
       <div className="footer-peeking-window" aria-hidden="true"><img className="footer-peeking-bear" src={`${assets}teddy-peeking-footer.webp`} width="1138" height="1382" alt="" loading="lazy" /></div>
     </Scene>

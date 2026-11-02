@@ -44,8 +44,7 @@ main { overflow: clip; }
 .welcome-teddy { width: 30%; left: -9%; bottom: -11%; z-index: 3; filter: drop-shadow(0 10px 12px #6e4a2518); }
 .welcome-cloud-left { width: clamp(130px, 23vw, 320px); left: -8%; top: 18%; opacity: .7; }
 .welcome-cloud-right { width: clamp(140px, 20vw, 260px); right: -7%; bottom: 12%; opacity: .7; }
-.welcome-star { width: clamp(25px, 3.5vw, 44px); left: 13%; top: 12%; }
-.welcome-balloons { width: clamp(100px, 17vw, 240px); right: 3%; top: 8%; }
+.welcome-star { width: clamp(34px, 4.6vw, 58px); left: 13%; top: 16%; }
 .invitation-hero { min-height: 100svh; display: grid; place-items: center; padding: 55px 24px 55px; }
 .invitation-hero-content { position: relative; z-index: 2; width: 100%; text-align: center; }
 .invitation-greeting { font-family: var(--script); font-size: clamp(42px, 5vw, 62px); font-weight: 400; color: var(--gold); line-height: 1.2; }
@@ -86,9 +85,9 @@ main { overflow: clip; }
 .expecting-photo-card img { display: block; width: 100%; height: auto; border-radius: 20px 8px 20px 8px; box-shadow: 0 12px 28px #49342124; }
 .expecting-photo-card figcaption { padding: 16px 8px 0; color: var(--gold); font-family: var(--script); font-size: 29px; line-height: 1.2; }
 .story-cloud-top { width: clamp(180px, 30vw, 420px); top: 7%; right: -5%; opacity: .7; }
-.story-moon { width: clamp(75px, 11vw, 140px); left: 1%; top: 8%; }
-.story-star-left { width: 32px; left: 13%; bottom: 8%; }
-.story-star-right { width: 40px; right: 7%; bottom: 13%; }
+.story-moon { width: clamp(75px, 11vw, 140px); left: 1%; top: 16%; }
+.story-star-left { width: clamp(26px, 3.2vw, 42px); left: 13%; bottom: 12%; }
+.story-star-right { width: clamp(42px, 5.2vw, 68px); right: 8%; bottom: 17%; }
 .details-scene { padding: 115px 24px 125px; text-align: center; }
 .details-content { position: relative; z-index: 2; width: min(100%, 740px); margin: auto; }
 .details-content h2 { font-size: clamp(36px, 4.5vw, 56px); line-height: 1.2; margin-bottom: 45px; letter-spacing: -.035em; }
@@ -117,7 +116,6 @@ main { overflow: clip; }
 .countdown-values .countdown-unit > span { font-size: 13px; color: var(--muted); }
 .countdown-values .countdown-separator { flex: 0 0 auto; margin-top: -16px; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(23px, 3vw, 32px); color: var(--gold); }
 .details-cloud { width: clamp(140px, 22vw, 300px); left: -8%; bottom: 10%; opacity: .65; }
-.details-balloons { width: clamp(120px, 19vw, 250px); right: -2%; top: 8%; opacity: .8; }
 .rsvp-scene { min-height: 75svh; display: grid; place-items: center; text-align: center; padding: 100px 24px 300px; }
 .rsvp-content { position: relative; z-index: 2; width: min(100%, 650px); }
 .footer-peeking-window { position: absolute; z-index: 1; left: 50%; bottom: 0; width: clamp(190px, 30vw, 300px); height: clamp(250px, 29vw, 280px); overflow: hidden; transform: translateX(-50%); pointer-events: none; }
@@ -136,21 +134,44 @@ main { overflow: clip; }
 .rsvp-floating { position: fixed; z-index: 20; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); display: inline-flex; min-height: 56px; align-items: center; justify-content: center; gap: 11px; padding: 13px 20px; border: 1px solid #fff7e5d9; border-radius: 999px; background: linear-gradient(118deg, #fff8e9e8, #d9bd91e8); color: #533821; box-shadow: inset 0 1px 0 #ffffffed, 0 8px 24px #593b2540; backdrop-filter: blur(14px) saturate(145%); -webkit-backdrop-filter: blur(14px) saturate(145%); font: 600 15px/1.2 inherit; text-decoration: none; }
 .rsvp-floating .whatsapp-icon { width: 23px; height: 23px; }
 .rsvp-floating:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+.music-toggle { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); display: grid; width: 48px; height: 48px; place-items: center; padding: 0; border: 1px solid #fff7e5d9; border-radius: 50%; background: #fff9edc9; color: #63482e; box-shadow: inset 0 1px 0 #fff, 0 5px 18px #593b2526; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); cursor: pointer; }
+.music-toggle svg { width: 21px; height: 21px; }
+.music-toggle:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
 @media (max-width: 480px) { .rsvp-floating { right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); min-height: 52px; padding: 12px 16px; font-size: 14px; } }
 .rsvp-arrow { font-size: 23px; line-height: 1; }
 .back-link { display: block; width: fit-content; margin: 28px auto 0; padding: 10px; font-size: 16px; color: var(--muted); text-underline-offset: 5px; }
 .rsvp-cloud-left { width: clamp(160px, 28vw, 350px); left: -10%; top: 12%; opacity: .7; }
 .rsvp-cloud-right { width: clamp(180px, 30vw, 420px); right: -12%; bottom: 9%; opacity: .7; }
-.rsvp-star { width: 32px; right: 15%; top: 10%; }
+.rsvp-star { width: clamp(40px, 4.8vw, 62px); right: 15%; top: 18%; }
+.hot-air-balloon { z-index: -1; width: clamp(150px, 19vw, 260px); opacity: .52; }
+.welcome-hot-air { left: max(60px, 11%); top: 34%; }
+.story-hot-air { right: max(60px, 9%); top: 24%; }
+.expecting-hot-air { right: max(60px, 8%); top: 28%; }
+.details-hot-air { left: max(60px, 8%); top: 35%; }
+.rsvp-hot-air { left: max(60px, 10%); top: 31%; }
+.balloon-bouquet { position: absolute; z-index: 0; width: clamp(165px, 23vw, 240px); height: clamp(225px, 31vw, 315px); pointer-events: none; opacity: .72; }
+.balloon-single { width: 44%; }
+.balloon-slot-1 { left: 3%; top: 18%; width: 43%; z-index: 1; opacity: .72; }
+.balloon-slot-2 { left: 29%; top: 1%; width: 57%; z-index: 2; opacity: 1; }
+.balloon-slot-3 { left: 57%; top: 21%; width: 40%; z-index: 1; opacity: .68; }
+.balloon-slot-4 { left: 34%; top: 42%; width: 52%; z-index: 3; opacity: .88; }
+.balloon-transition { position: fixed; z-index: 1000; inset: 0; width: 100vw; height: 100dvh; overflow: hidden; pointer-events: none; }
+.balloon-transition-sheet { position: absolute; top: 0; left: 50%; will-change: transform; }
+.balloon-transition-sheet img { display: block; width: 100%; height: auto; max-width: none; }
+.welcome-bouquet { right: 4%; top: 32%; }
+.story-bouquet { right: 4%; top: 50%; }
+.expecting-bouquet { left: 4%; top: 38%; }
+.details-bouquet { right: 5%; top: 31%; }
+.rsvp-bouquet { right: 5%; top: 42%; }
 @media (max-width: 750px) {
+  .hot-air-balloon { width: clamp(130px, 34vw, 205px); }
   .welcome-scene { padding: 90px 20px 95px; }
   .welcome-content h1 { font-size: clamp(40px, 10vw, 58px); }
   .closed-envelope-scene { margin-top: 30px; margin-bottom: 50px; }
   .welcome-teddy { width: 33%; left: -7%; bottom: -18%; }
-  .welcome-balloons { width: 110px; right: -8%; top: 5%; opacity: .8; }
   .welcome-cloud-left { width: 150px; left: -23%; top: 17%; }
   .welcome-cloud-right { width: 170px; right: -26%; bottom: 9%; }
-  .welcome-star { width: 26px; left: 10%; top: 9%; }
+  .welcome-star { width: 34px; left: 10%; top: 14%; }
   .invitation-hero { padding: 45px 20px 60px; }
   .invitation-greeting { font-size: 44px; }
   .open-envelope-scene { margin-top: 32px; margin-bottom: 70px; }
@@ -178,8 +199,8 @@ main { overflow: clip; }
   .expecting-content h2 { font-size: clamp(34px, 9vw, 42px); }
   .expecting-intro { font-size: 16px; line-height: 1.8; }
   .story-moon { width: 70px; left: -7%; top: 54%; }
-  .story-star-left { width: 26px; left: 9%; bottom: 5%; }
-  .story-star-right { width: 30px; right: 6%; bottom: 20%; }
+  .story-star-left { width: 25px; left: 9%; bottom: 15%; }
+  .story-star-right { width: 44px; right: 7%; bottom: 22%; }
   .details-scene { padding: 90px 24px 100px; }
   .details-content h2 { font-size: 37px; margin-bottom: 37px; }
   .event-date { gap: 22px; }
@@ -196,7 +217,6 @@ main { overflow: clip; }
   .countdown-values strong { font-size: clamp(27px, 8vw, 34px); }
   .countdown-values .countdown-unit > span { font-size: 12px; }
   .countdown-values .countdown-separator { font-size: 23px; }
-  .details-balloons { width: 110px; top: 1%; right: -18%; opacity: .6; }
   .details-cloud { width: 150px; left: -25%; bottom: 8%; }
   .rsvp-scene { padding: 90px 26px 260px; }
   .rsvp-content h2 { font-size: 38px; }
