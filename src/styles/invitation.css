@@ -13,6 +13,8 @@
   -webkit-font-smoothing: antialiased;
 }
 * { box-sizing: border-box; }
+:where(a, button, input, select, textarea, [role="button"]) { -webkit-tap-highlight-color: transparent; }
+:focus:not(:focus-visible) { outline: none; }
 html { scroll-behavior: smooth; }
 body { margin: 0; color: var(--ink); background: var(--cream); }
 a { color: inherit; }
@@ -136,7 +138,10 @@ main { overflow: clip; }
 .rsvp-floating:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
 .music-control { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); display: flex; align-items: center; gap: 10px; }
 .music-toggle { display: grid; flex: 0 0 48px; width: 48px; height: 48px; place-items: center; padding: 0; border: 1px solid #fff7e5d9; border-radius: 50%; background: #fff9edc9; color: #63482e; box-shadow: inset 0 1px 0 #fff, 0 5px 18px #593b2526; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); cursor: pointer; }
-.music-volume { display: flex; width: 112px; height: 40px; align-items: center; justify-content: center; padding: 0 12px; border: 1px solid #fff7e5d9; border-radius: 999px; background: #fff9edc9; box-shadow: inset 0 1px 0 #fff, 0 5px 18px #593b2526; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); animation: music-volume-in .2s ease-out both; }
+.music-volume { display: flex; width: 148px; height: 40px; align-items: center; gap: 10px; justify-content: center; padding: 0 12px; border: 1px solid #fff7e5d9; border-radius: 999px; background: #fff9edc9; box-shadow: inset 0 1px 0 #fff, 0 5px 18px #593b2526; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); animation: music-volume-in .2s ease-out both; }
+.music-pause { display: grid; flex: 0 0 28px; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid #a6783552; border-radius: 50%; background: #fffaf0; color: #63482e; box-shadow: 0 1px 4px #593b2520; cursor: pointer; }
+.music-pause svg { display: block; width: 14px; height: 14px; fill: currentColor; }
+.music-pause:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .music-volume input { width: 100%; height: 4px; margin: 0; appearance: none; border-radius: 99px; background: linear-gradient(90deg, #a87938, #dcc49b); cursor: pointer; }
 .music-volume input::-webkit-slider-thumb { width: 14px; height: 14px; appearance: none; border: 2px solid #fffaf0; border-radius: 50%; background: #a87938; box-shadow: 0 1px 5px #593b2540; }
 .music-volume input::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid #fffaf0; border-radius: 50%; background: #a87938; box-shadow: 0 1px 5px #593b2540; }

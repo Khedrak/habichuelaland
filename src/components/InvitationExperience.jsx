@@ -103,9 +103,17 @@ function BalloonTransition({ onMidpoint, onComplete }) {
 function MusicToggle() {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(55);
+  const [expanded, setExpanded] = useState(false);
   const audioRef = useRef(null);
+  const controlRef = useRef(null);
   const startedRef = useRef(false);
   const reduced = useReducedMotion();
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const collapseOutside = (event) => { if (!controlRef.current?.contains(event.target)) setExpanded(false); };
+    document.addEventListener('pointerdown', collapseOutside);
+    return () => document.removeEventListener('pointerdown', collapseOutside);
+  }, [expanded]);
   const toggleMusic = async () => {
     if (playing) {
       audioRef.current?.pause();
@@ -130,9 +138,9 @@ function MusicToggle() {
   };
 
   return <><audio ref={audioRef} src={`${assets}You%27ll%20Be%20in%20My%20Heart.mp3`} loop preload="metadata" onEnded={() => setPlaying(false)} volume={volume / 100} />
-    <div className="music-control">
-      {playing && <div className="music-volume"><input type="range" min="0" max="100" step="1" value={volume} aria-label="Nivel de audio" onChange={(event) => { const next = Number(event.currentTarget.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /></div>}
-    <motion.button className="music-toggle" type="button" onClick={toggleMusic} aria-pressed={playing} aria-label={playing ? 'Desactivar música' : 'Activar música'} title={playing ? 'Desactivar música' : 'Activar música'} animate={reduced || playing ? { x: 0, rotate: 0 } : { x: [0, -1.5, 1.5, -0.8, 0], rotate: [0, -0.45, 0.45, -0.25, 0] }} transition={!reduced && !playing ? { x: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' }, rotate: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' } } : { duration: 0.2 }}>
+    <div className="music-control" ref={controlRef}>
+      {playing && expanded && <div className="music-volume"><input type="range" min="0" max="100" step="1" value={volume} aria-label="Nivel de audio" onChange={(event) => { const next = Number(event.currentTarget.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /><button type="button" className="music-pause" aria-label="Pausar música" title="Pausar música" onClick={() => { audioRef.current?.pause(); setPlaying(false); setExpanded(false); }}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="4" width="4" height="16" rx="1" /><rect x="13.5" y="4" width="4" height="16" rx="1" /></svg></button></div>}
+    <motion.button className="music-toggle" type="button" onClick={() => playing ? setExpanded((value) => !value) : toggleMusic()} aria-pressed={playing} aria-expanded={playing ? expanded : undefined} aria-label={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} title={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} animate={reduced || playing ? { x: 0, rotate: 0 } : { x: [0, -1.5, 1.5, -0.8, 0], rotate: [0, -0.45, 0.45, -0.25, 0] }} transition={!reduced && !playing ? { x: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' }, rotate: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' } } : { duration: 0.2 }}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-3 3-3 3 .9 3 2Zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2ZM9 9l12-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />{!playing && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}</svg>
     </motion.button></div></>;
 }
