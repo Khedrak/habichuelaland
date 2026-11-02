@@ -5,6 +5,12 @@ import { createCalendarEvent, decodeGuestName, getConfirmationUrl, invitationCon
 
 const SceneProgress = createContext(null);
 const assets = '/assets/';
+const MUSIC_PREFERENCE_KEY = 'habichuelaland-music-enabled';
+
+function saveMusicPreference(enabled) {
+  try { window.localStorage.setItem(MUSIC_PREFERENCE_KEY, String(enabled)); }
+  catch { /* Storage may be unavailable in private browsing or restricted contexts. */ }
+}
 
 function useGuest() {
   const [guest, setGuest] = useState(invitationConfig.defaultGuest);
@@ -112,6 +118,11 @@ function MusicToggle() {
     if (audioRef.current) audioRef.current.volume = volume / 100;
   }, [volume]);
   useEffect(() => {
+    try {
+      if (window.localStorage.getItem(MUSIC_PREFERENCE_KEY) === 'true') void toggleMusic();
+    } catch { /* Keep music opt-in when storage is unavailable. */ }
+  }, []);
+  useEffect(() => {
     if (!expanded) return undefined;
     const collapseOutside = (event) => { if (!controlRef.current?.contains(event.target)) setExpanded(false); };
     document.addEventListener('pointerdown', collapseOutside);
@@ -120,6 +131,7 @@ function MusicToggle() {
   const toggleMusic = async () => {
     if (playing) {
       audioRef.current?.pause();
+      saveMusicPreference(false);
       setPlaying(false);
       return;
     }
@@ -136,6 +148,7 @@ function MusicToggle() {
       if (audio && !startedRef.current) audio.currentTime = Math.min(4, Math.max(0, audio.duration - 0.1));
       await audio?.play();
       startedRef.current = true;
+      saveMusicPreference(true);
       setPlaying(true);
     }
     catch (error) { console.error('Could not play the invitation music.', error); setPlaying(false); }
@@ -143,7 +156,7 @@ function MusicToggle() {
 
   return <><audio ref={audioRef} src={`${assets}You%27ll%20Be%20in%20My%20Heart.mp3`} loop preload="metadata" onEnded={() => setPlaying(false)} />
     <div className="music-control" ref={controlRef}>
-      {playing && expanded && <div className="music-volume"><input type="range" min="0" max="100" step="1" value={volume} aria-label="Nivel de audio" onChange={(event) => { const next = Number(event.currentTarget.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /><button type="button" className="music-pause" aria-label="Pausar música" title="Pausar música" onClick={() => { audioRef.current?.pause(); setPlaying(false); setExpanded(false); }}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="4" width="4" height="16" rx="1" /><rect x="13.5" y="4" width="4" height="16" rx="1" /></svg></button></div>}
+      {playing && expanded && <div className="music-volume"><input type="range" min="0" max="100" step="1" value={volume} aria-label="Nivel de audio" onChange={(event) => { const next = Number(event.currentTarget.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /><button type="button" className="music-pause" aria-label="Pausar música" title="Pausar música" onClick={() => { audioRef.current?.pause(); saveMusicPreference(false); setPlaying(false); setExpanded(false); }}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="4" width="4" height="16" rx="1" /><rect x="13.5" y="4" width="4" height="16" rx="1" /></svg></button></div>}
     <motion.button className="music-toggle" type="button" onClick={() => playing ? setExpanded((value) => !value) : toggleMusic()} aria-pressed={playing} aria-expanded={playing ? expanded : undefined} aria-label={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} title={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} animate={reduced || playing ? { x: 0, rotate: 0 } : { x: [0, -1.5, 1.5, -0.8, 0], rotate: [0, -0.45, 0.45, -0.25, 0] }} transition={!reduced && !playing ? { x: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' }, rotate: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' } } : { duration: 0.2 }}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-3 3-3 3 .9 3 2Zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2ZM9 9l12-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />{!playing && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}</svg>
     </motion.button></div></>;
@@ -284,7 +297,7 @@ function CalendarButton() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  return <button className="calendar-button" type="button" onClick={openCalendar}>
+  return <button className="calendar-button rsvp-button" type="button" onClick={openCalendar}>
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.6"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16M8 13h3v3H8z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
     <span>Agregar al calendario</span>
   </button>;

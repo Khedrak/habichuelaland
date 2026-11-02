@@ -1,11 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import InvitationUnavailable from '../components/InvitationUnavailable.astro';
 import { InvitationExperience } from '../components/InvitationExperience.jsx';
+import { parseGuestName } from '../lib/invitation.js';
 import '../styles/invitation.css';
 
-export const prerender = true;
+export const prerender = false;
+
+const guestName = parseGuestName(Astro.url.searchParams.get('n'));
+if (!guestName) {
+  Astro.response.status = 404;
+  Astro.response.statusText = 'Not Found';
+}
 ---
 
-<BaseLayout title="Una invitación para ti" description="Hay una pequeña gran sorpresa que queremos compartir contigo. Abre tu invitación." preloadImages={[{ href: '/assets/invitation-background-mobile-soft.webp', media: '(max-width: 600px)' }, { href: '/assets/invitation-background-desktop-soft.webp', media: '(min-width: 601px)' }, { href: '/assets/envelope-stationery-closed.webp' }, { href: '/assets/envelope-stationery-open.webp' }, { href: '/assets/balloon-curtain-mobile.webp', media: '(max-width: 600px)' }, { href: '/assets/balloon-curtain-desktop.webp', media: '(min-width: 601px)' }]}>
+{guestName ? <BaseLayout title="Una invitación para ti" description="Hay una pequeña gran sorpresa que queremos compartir contigo. Abre tu invitación." preloadImages={[{ href: '/assets/invitation-background-mobile-soft.webp', media: '(max-width: 600px)' }, { href: '/assets/invitation-background-desktop-soft.webp', media: '(min-width: 601px)' }, { href: '/assets/envelope-stationery-closed.webp' }, { href: '/assets/envelope-stationery-open.webp' }, { href: '/assets/balloon-curtain-mobile.webp', media: '(max-width: 600px)' }, { href: '/assets/balloon-curtain-desktop.webp', media: '(min-width: 601px)' }]}>
   <InvitationExperience client:load />
-</BaseLayout>
+</BaseLayout> : <InvitationUnavailable />}

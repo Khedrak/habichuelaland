@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { encodeGuestName, invitationConfig, toTitleCaseName } from '../lib/invitation.js';
+import { encodeGuestName, toTitleCaseName } from '../lib/invitation.js';
 
 export default function AdminInviteForm() {
   const reduced = useReducedMotion();
@@ -8,17 +8,22 @@ export default function AdminInviteForm() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [copyTooltip, setCopyTooltip] = useState(false);
   const [canShare, setCanShare] = useState(false);
   const linkRef = useRef(null);
+  const copyTooltipTimer = useRef(null);
 
   useEffect(() => {
     setCanShare(typeof navigator.share === 'function');
+    return () => window.clearTimeout(copyTooltipTimer.current);
   }, []);
 
   const clearGeneratedLink = () => {
     setResult(null);
     setError('');
     setFeedback('');
+    setCopyTooltip(false);
+    window.clearTimeout(copyTooltipTimer.current);
   };
 
   const generateLink = (event) => {
@@ -34,16 +39,18 @@ export default function AdminInviteForm() {
 
     const url = new URL('/', window.location.origin);
     url.searchParams.set('n', encodeGuestName(name));
-    const message = `Hola, ${name}. Queremos invitarte a nuestra revelación de género el ${invitationConfig.dateLabel}. Abre tu invitación aquí:\n${url.href}`;
     const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    setResult({ name, url: url.href, message, isLocal });
+    setResult({ name, url: url.href, isLocal });
   };
 
   const copyLink = async () => {
     if (!result) return;
     try {
       await navigator.clipboard.writeText(result.url);
-      setFeedback('Enlace copiado. Ya puedes enviarlo.');
+      setFeedback('');
+      setCopyTooltip(true);
+      window.clearTimeout(copyTooltipTimer.current);
+      copyTooltipTimer.current = window.setTimeout(() => setCopyTooltip(false), 5000);
     } catch {
       linkRef.current?.focus();
       linkRef.current?.select();
@@ -54,7 +61,7 @@ export default function AdminInviteForm() {
   const shareLink = async () => {
     if (!result || !navigator.share) return;
     try {
-      await navigator.share({ title: 'Una invitación para ti', text: `Hola, ${result.name}. Queremos compartir una pequeña gran sorpresa contigo.`, url: result.url });
+      await navigator.share({ title: 'Una invitación para ti', text: `Una invitación para ${result.name}.`, url: result.url });
       setFeedback('Invitación compartida.');
     } catch (shareError) {
       if (shareError?.name !== 'AbortError') setFeedback('No fue posible abrir el menú para compartir. Puedes copiar el enlace.');
@@ -82,15 +89,20 @@ export default function AdminInviteForm() {
         <motion.section className="admin-result" aria-labelledby="admin-result-title" initial={reduced ? false : { y: 4, opacity: 0.98 }} animate={reduced ? undefined : { y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
           <h2 id="admin-result-title">La invitación de {result.name}</h2>
           <label className="admin-link-label" htmlFor="admin-generated-link">Enlace personalizado</label>
-          <textarea ref={linkRef} id="admin-generated-link" rows={3} readOnly value={result.url} spellCheck={false} />
+          <div className="admin-link-field">
+            <textarea ref={linkRef} id="admin-generated-link" rows={3} readOnly value={result.url} spellCheck={false} />
+            <span className="admin-copy-control">
+              <button type="button" className="admin-copy-icon-button" onClick={copyLink} aria-label="Copiar enlace de invitación" aria-describedby={copyTooltip ? 'admin-copy-tooltip' : undefined} title="Copiar enlace">
+                <svg className="admin-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></svg>
+              </button>
+              {copyTooltip && <span className="admin-copy-tooltip" id="admin-copy-tooltip" role="tooltip">Enlace copiado</span>}
+            </span>
+          </div>
           {result.isLocal && <p className="admin-share-help">Este enlace apunta a tu servidor local. Para enviarlo a otras personas, abre esta herramienta desde la URL pública del sitio.</p>}
           <div className="admin-actions">
-            <button type="button" className="admin-button admin-button-secondary" onClick={copyLink} aria-label="Copiar enlace de invitación"><svg className="admin-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></svg>Copiar enlace</button>
-            {canShare && <button type="button" className="admin-button admin-button-secondary" onClick={shareLink}>Compartir</button>}
-            <a className="admin-text-link" href={result.url} target="_blank" rel="noopener noreferrer">Ver invitación <span aria-hidden="true">↗</span></a>
+            {canShare && <button type="button" className="admin-button" onClick={shareLink}>Compartir</button>}
+            <a className="admin-text-link" href={result.url} target="_blank" rel="noopener noreferrer">Ver invitación</a>
           </div>
-          <a className="admin-button admin-button-primary admin-whatsapp" href={`https://wa.me/?text=${encodeURIComponent(result.message)}`} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp <span aria-hidden="true">↗</span></a>
-          <p className="admin-share-help">WhatsApp se abrirá con el mensaje preparado; elige el contacto y envíalo manualmente.</p>
         </motion.section>
       )}
       <p className="admin-feedback" role="status" aria-live="polite">{feedback}</p>

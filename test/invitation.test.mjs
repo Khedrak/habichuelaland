@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCalendarEvent, encodeGuestName, decodeGuestName, getConfirmationUrl, invitationConfig, toTitleCaseName } from '../src/lib/invitation.js';
+import { createCalendarEvent, encodeGuestName, decodeGuestName, getConfirmationUrl, invitationConfig, parseGuestName, toTitleCaseName } from '../src/lib/invitation.js';
 
 test('guest tokens roundtrip Unicode with compact URL-safe characters', () => {
   for (const name of ['Gerardo', 'María José', '王小明', 'Familia 🌙', '<script>alert(1)</script>']) {
@@ -20,6 +20,13 @@ test('malformed, excessive and empty tokens use a friendly fallback', () => {
   for (const token of [null, '', '%invalid', 'a', '_w', 'x'.repeat(513), encodeGuestName(' '), encodeGuestName('a'.repeat(101))]) {
     assert.equal(decodeGuestName(token), invitationConfig.defaultGuest);
   }
+});
+
+test('only valid personalized tokens resolve to a guest name', () => {
+  assert.equal(parseGuestName(null), null);
+  assert.equal(parseGuestName(''), null);
+  assert.equal(parseGuestName(encodeGuestName('  ')), null);
+  assert.equal(parseGuestName(encodeGuestName('mARÍA jOsÉ')), 'María José');
 });
 
 test('WhatsApp uses the confirmed phone and a personalized message', () => {
