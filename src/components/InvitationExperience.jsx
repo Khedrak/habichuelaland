@@ -89,7 +89,7 @@ function BalloonTransition({ onMidpoint, onComplete }) {
     ], { duration, easing: 'linear', fill: 'forwards' });
     let frame;
     const checkMidpoint = () => {
-      if (Number(animation.currentTime) >= duration / 2) {
+      if (Number(animation.currentTime) >= duration / 2 - 1000) {
         onMidpoint();
       } else {
         frame = requestAnimationFrame(checkMidpoint);
@@ -176,7 +176,7 @@ function TextReveal({ as = 'p', children, delay = 0, immediate = false, ...props
 
 function EnvelopeOpening({ guest, onOpened }) {
   const reduced = useReducedMotion();
-  const guestNameSize = Math.max(32, Math.min(72, 1450 / Math.max([...guest.trim()].length, 1)));
+  const guestNameSize = Math.max(20, Math.min(72, 1100 / Math.max([...guest.trim()].length, 1)));
   const [phase, setPhase] = useState('closed');
   const [showBalloonCurtain, setShowBalloonCurtain] = useState(false);
   const phaseRef = useRef('closed');
@@ -234,9 +234,9 @@ function EnvelopeOpening({ guest, onOpened }) {
       <div className="opening-cue-slot" aria-live="polite">
         {phase === 'closed' && <TextReveal className="open-cue">Toca el sobre para abrir</TextReveal>}
         {(phase === 'lifting' || phase === 'open') && <TextReveal className="opening-status" role="status">Abriendo tu invitación…</TextReveal>}
-        {phase === 'revealed' && <motion.a className="opening-down-cue" href="#historia" aria-label="Desplazarse para ver más detalles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0.1 : 0.5 }}><motion.span aria-hidden="true" animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>↓</motion.span></motion.a>}
       </div>
     </div>
+    {phase === 'revealed' && <motion.a className="opening-down-cue" href="#historia" aria-label="Desplazarse para ver más detalles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0.1 : 0.5 }}><motion.span aria-hidden="true" animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>↓</motion.span></motion.a>}
     {showBalloonCurtain && <BalloonTransition onMidpoint={() => changePhase('open')} onComplete={() => setShowBalloonCurtain(false)} />}
   </Scene>;
 }
