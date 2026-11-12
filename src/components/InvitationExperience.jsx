@@ -6,6 +6,19 @@ import { createCalendarEvent, decodeGuestName, getConfirmationUrl, invitationCon
 const SceneProgress = createContext(null);
 const assets = '/assets/';
 const MUSIC_PREFERENCE_KEY = 'habichuelaland-music-enabled';
+let curtainImagePromise;
+
+function preloadCurtain() {
+  if (!curtainImagePromise) {
+    const image = new Image();
+    image.src = `${assets}balloon-curtain-${window.matchMedia('(max-width: 600px)').matches ? 'mobile' : 'desktop'}.webp`;
+    curtainImagePromise = image.decode().then(() => image).catch((error) => {
+      curtainImagePromise = undefined;
+      throw error;
+    });
+  }
+  return curtainImagePromise;
+}
 
 function saveMusicPreference(enabled) {
   try { window.localStorage.setItem(MUSIC_PREFERENCE_KEY, String(enabled)); }
@@ -66,9 +79,7 @@ function BalloonTransition({ onMidpoint, onComplete }) {
   useEffect(() => {
     let cancelled = false;
     const mobile = window.matchMedia('(max-width: 600px)').matches;
-    const image = new Image();
-    image.src = `${assets}balloon-curtain-${mobile ? 'mobile' : 'desktop'}.webp`;
-    image.decode().then(() => {
+    preloadCurtain().then((image) => {
       if (cancelled) return;
       const viewportHeight = window.innerHeight;
       const ratio = image.naturalWidth / image.naturalHeight;
@@ -87,17 +98,9 @@ function BalloonTransition({ onMidpoint, onComplete }) {
       { transform: `translate3d(-50%, ${sheet.start}px, 0)` },
       { transform: `translate3d(-50%, ${sheet.end}px, 0)` },
     ], { duration, easing: 'linear', fill: 'forwards' });
-    let frame;
-    const checkMidpoint = () => {
-      if (Number(animation.currentTime) >= duration / 2 - 1000) {
-        onMidpoint();
-      } else {
-        frame = requestAnimationFrame(checkMidpoint);
-      }
-    };
-    frame = requestAnimationFrame(checkMidpoint);
+    const swapTimer = window.setTimeout(onMidpoint, duration / 2 - 1000);
     animation.onfinish = onComplete;
-    return () => { cancelAnimationFrame(frame); animation.cancel(); };
+    return () => { window.clearTimeout(swapTimer); animation.cancel(); };
   }, [sheet]);
   if (!sheet || typeof document === 'undefined') return null;
   return createPortal(<div className="balloon-transition" aria-hidden="true"><div ref={sheetRef} className="balloon-transition-sheet"
@@ -187,16 +190,17 @@ function EnvelopeOpening({ guest, onOpened }) {
   const changePhase = (next) => { phaseRef.current = next; setPhase(next); };
 
   useEffect(() => {
+    preloadCurtain().catch(() => {});
     const preload = [
       'envelope-stationery-open.webp', 'teddy-welcome.webp', 'teddy-thinking-back.webp',
       'invitation-background-mobile-soft.webp', 'invitation-background-desktop-soft.webp',
     ];
-    preload.forEach((src) => { const image = new Image(); image.src = `${assets}${src}`; });
+    preload.forEach((src) => { const image = new Image(); image.src = `${assets}${src}`; image.decode().catch(() => {}); });
   }, []);
 
   useEffect(() => {
     if (phase === 'open') changePhase('card');
-    else if (phase === 'card') { changePhase('revealed'); onOpened(); }
+    else if (phase === 'card') { changePhase('revealed'); if (reduced) onOpened(); }
   }, [phase]);
 
   const unlockPageScroll = () => {
@@ -257,6 +261,7 @@ function EnvelopeOpening({ guest, onOpened }) {
   const finishBalloonTransition = () => {
     unlockPageScroll();
     setShowBalloonCurtain(false);
+    onOpened();
   };
 
   return <Scene className={`opening-scene opening-phase-${phase}`} id="inicio" label="Tu invitación personal">
