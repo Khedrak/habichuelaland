@@ -279,7 +279,7 @@ function EnvelopeOpening({ guest, onOpened, onBeginOpening }) {
     <BalloonBouquet className="welcome-bouquet" colors={['gold', 'ivory', 'taupe']} loading="eager" />
     <HotAirBalloon className="welcome-hot-air" direction={1} delay={0.8} />
     <div className="opening-content">
-      <motion.p className="opening-kicker" initial={reduced ? false : { opacity: 0, y: 10 }} animate={{ opacity: phase === 'closed' ? 1 : 0, y: phase === 'closed' ? 0 : -8 }} transition={{ duration: reduced ? 0.1 : 0.6, delay: reduced ? 0 : 0.1 }}>Una noticia llena de amor</motion.p>
+      <motion.p className="opening-kicker" aria-hidden="true" initial={reduced ? false : { opacity: 0, y: 10 }} animate={{ opacity: phase === 'closed' ? 1 : 0, y: phase === 'closed' ? 0 : -8 }} transition={{ duration: reduced ? 0.1 : 0.6, delay: reduced ? 0 : 0.1 }}>&nbsp;</motion.p>
       <motion.h1 className="opening-title" initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: phase === 'closed' ? 1 : 0, y: reduced || phase === 'closed' ? 0 : -12 }} transition={{ duration: reduced ? 0.1 : 0.7, ease: [0.22, 0.65, 0.3, 1] }}>Tienes una<br /><em>invitación</em></motion.h1>
       <div className="opening-stage envelope-frame" data-phase={phase}>
         <motion.div className="opening-artwork" initial={false}>
