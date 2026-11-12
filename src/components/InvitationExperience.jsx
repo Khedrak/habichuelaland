@@ -180,6 +180,7 @@ function EnvelopeOpening({ guest, onOpened }) {
   const [phase, setPhase] = useState('closed');
   const [showBalloonCurtain, setShowBalloonCurtain] = useState(false);
   const phaseRef = useRef('closed');
+  const scrollRestoreRef = useRef(null);
   const [lift, setLift] = useState(48);
   const cardVisible = phase === 'card' || phase === 'revealed';
   const openVisible = phase === 'open' || cardVisible;
@@ -198,11 +199,64 @@ function EnvelopeOpening({ guest, onOpened }) {
     else if (phase === 'card') { changePhase('revealed'); onOpened(); }
   }, [phase]);
 
+  const unlockPageScroll = () => {
+    const restore = scrollRestoreRef.current;
+    if (!restore) return;
+    scrollRestoreRef.current = null;
+    restore();
+  };
+
+  const lockPageScroll = () => {
+    if (scrollRestoreRef.current) return;
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const previous = {
+      rootOverflow: root.style.overflow,
+      rootOverscroll: root.style.overscrollBehavior,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyWidth: body.style.width,
+      bodyOverflow: body.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+    };
+    root.style.overflow = 'hidden';
+    root.style.overscrollBehavior = 'none';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.width = `${root.clientWidth}px`;
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    scrollRestoreRef.current = () => {
+      root.style.overflow = previous.rootOverflow;
+      root.style.overscrollBehavior = previous.rootOverscroll;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.left = previous.bodyLeft;
+      body.style.width = previous.bodyWidth;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.overscrollBehavior = previous.bodyOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  };
+
+  useEffect(() => () => unlockPageScroll(), []);
+
   const beginOpening = () => {
     if (phaseRef.current !== 'closed') return;
     setLift(Math.min(64, window.innerHeight * 0.07));
-    if (!reduced) setShowBalloonCurtain(true);
+    if (!reduced) {
+      lockPageScroll();
+      setShowBalloonCurtain(true);
+    }
     changePhase(reduced ? 'open' : 'lifting');
+  };
+
+  const finishBalloonTransition = () => {
+    unlockPageScroll();
+    setShowBalloonCurtain(false);
   };
 
   return <Scene className={`opening-scene opening-phase-${phase}`} id="inicio" label="Tu invitación personal">
@@ -237,7 +291,7 @@ function EnvelopeOpening({ guest, onOpened }) {
       </div>
     </div>
     {phase === 'revealed' && <motion.a className="opening-down-cue" href="#historia" aria-label="Desplazarse para ver más detalles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0.1 : 0.5 }}><motion.span aria-hidden="true" animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}>↓</motion.span></motion.a>}
-    {showBalloonCurtain && <BalloonTransition onMidpoint={() => changePhase('open')} onComplete={() => setShowBalloonCurtain(false)} />}
+    {showBalloonCurtain && <BalloonTransition onMidpoint={() => changePhase('open')} onComplete={finishBalloonTransition} />}
   </Scene>;
 }
 
@@ -318,15 +372,15 @@ function InvitationSections({ guest }) {
           <div className="ultrasound-easel-frame"><img src={`${assets}ultrasound-first-look.webp`} width="1200" height="860" alt="Ecografía de nuestro bebé creciendo en el vientre." loading="lazy" /></div>
           <div className="easel-stand" aria-hidden="true"><span className="easel-leg easel-leg-left" /><span className="easel-leg easel-leg-middle" /><span className="easel-leg easel-leg-right" /></div>
         </figure>
-        <Reveal className="story-copy"><TextReveal as="h2">El amor ya lo sabemos.<br /><em>La sorpresa, todavía no.</em></TextReveal><TextReveal delay={0.12}>Hay alguien que aún no conocemos y que ya llena nuestros días de ilusión.</TextReveal><TextReveal delay={0.22}>Queremos que seas parte de este momento: descubrir juntos si nuestro mundo se llenará de una pequeña niña o un pequeño niño.</TextReveal></Reveal>
+        <Reveal className="story-copy"><TextReveal as="h2">¡Se acerca el gran momento!</TextReveal><TextReveal delay={0.12}>Ya falta poco para descubrir si nuestra familia crecerá con una pequeña princesa o un pequeño príncipe.</TextReveal><TextReveal delay={0.22}>Queremos celebrar esta noticia junto a las personas que queremos. ¡Acompáñanos a descubrirlo!</TextReveal></Reveal>
       </div>
     </Scene>
     <Scene className="expecting-scene" id="preparativos" label="Preparativos llenos de amor">
       <BalloonBouquet className="expecting-bouquet" colors={['ivory', 'gold', 'cocoa']} />
       <HotAirBalloon className="expecting-hot-air" direction={1} delay={1.6} />
       <Reveal className="expecting-content">
-        <TextReveal as="h2">Todo lo que hacemos<br /><em>ya es pensando en ti</em></TextReveal>
-        <TextReveal className="expecting-intro" delay={0.1}>Entre pequeños preparativos y sueños compartidos, tu llegada ya llena de amor cada rincón de nuestra vida.</TextReveal>
+        <TextReveal as="h2">La espera también es parte de la aventura</TextReveal>
+        <TextReveal className="expecting-intro" delay={0.1}>Ya estamos preparando todo para recibir a nuestro bebé. Cada día falta menos y hay muchas cosas por descubrir antes de su llegada.</TextReveal>
         <div className="expecting-gallery">
           <TextReveal as="figure" className="expecting-photo-card" delay={0.16}>
             <img src={`${assets}expecting-baby-shoes.webp`} width="1200" height="1600" alt="Mamá y papá sostienen juntos unos pequeños zapatitos tejidos para su bebé." loading="lazy" />
