@@ -1,4 +1,4 @@
-const dateTime = '2026-11-28T16:00:00-03:00';
+const dateTime = '2026-11-28T18:00:00-03:00';
 const dateOptions = { timeZone: 'America/Santiago' };
 const eventDate = new Date(dateTime);
 const address = 'Alcalde Julio Arangua Nuñez Norte 399, Peñaflor';

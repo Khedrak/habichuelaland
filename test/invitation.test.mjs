@@ -36,12 +36,12 @@ test('WhatsApp uses the confirmed phone and a personalized message', () => {
   assert.match(url.searchParams.get('text'), /María José/);
   assert.match(url.searchParams.get('text'), /28 de noviembre/);
   assert.match(url.searchParams.get('text'), /Confirmo mi asistencia/);
-  assert.match(url.searchParams.get('text'), /16:00 hrs/);
+  assert.match(url.searchParams.get('text'), /18:00 hrs/);
 });
 
 test('countdown date has an explicit offset and the configured celebration date', () => {
-  assert.equal(invitationConfig.dateTime, '2026-11-28T16:00:00-03:00');
-  assert.equal(new Date(invitationConfig.dateTime).toISOString(), '2026-11-28T19:00:00.000Z');
+  assert.equal(invitationConfig.dateTime, '2026-11-28T18:00:00-03:00');
+  assert.equal(new Date(invitationConfig.dateTime).toISOString(), '2026-11-28T21:00:00.000Z');
 });
 
 
@@ -49,7 +49,7 @@ test('date display and weekday match the configured event date', () => {
   assert.equal(invitationConfig.day, '28');
   assert.equal(invitationConfig.weekday, 'sábado');
   assert.equal(invitationConfig.dateLabel, '28 de noviembre de 2026');
-  assert.equal(invitationConfig.timeLabel, '16:00 hrs');
+  assert.equal(invitationConfig.timeLabel, '18:00 hrs');
 });
 
 test('map links preserve the exact venue address', () => {
@@ -64,7 +64,7 @@ test('map links preserve the exact venue address', () => {
 
 test('calendar event includes the configured date, local start time, and address', () => {
   const event = createCalendarEvent();
-  assert.match(event, /DTSTART:20261128T190000Z/);
+  assert.match(event, /DTSTART:20261128T210000Z/);
   assert.match(event, /SUMMARY:Revelación de género/);
   assert.match(event, /LOCATION:Alcalde Julio Arangua Nuñez Norte 399\\, Peñaflor/);
 });
