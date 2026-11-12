@@ -85,7 +85,7 @@ function BalloonTransition({ onMidpoint, onComplete }) {
       const ratio = image.naturalWidth / image.naturalHeight;
       const width = mobile ? window.innerWidth * 1.5 : Math.max(window.innerWidth * 1.25, viewportHeight * ratio * 1.25);
       const height = width / ratio;
-      setSheet({ src: image.src, width, height, start: viewportHeight + 1, center: (viewportHeight - height) / 2, end: -height - 1 });
+      setSheet({ src: image.src, width, height, mobile, start: viewportHeight + 1, center: (viewportHeight - height) / 2, end: -height - 1 });
     }).catch(() => {
       if (!cancelled) { onMidpoint(); onComplete(); }
     });
@@ -98,7 +98,7 @@ function BalloonTransition({ onMidpoint, onComplete }) {
       { transform: `translate3d(-50%, ${sheet.start}px, 0)` },
       { transform: `translate3d(-50%, ${sheet.end}px, 0)` },
     ], { duration, easing: 'linear', fill: 'forwards' });
-    const swapTimer = window.setTimeout(onMidpoint, duration / 2 - 1000);
+    const swapTimer = window.setTimeout(onMidpoint, duration / 2 - (sheet.mobile ? 1000 : 0));
     animation.onfinish = onComplete;
     return () => { window.clearTimeout(swapTimer); animation.cancel(); };
   }, [sheet]);
