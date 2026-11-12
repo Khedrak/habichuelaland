@@ -137,6 +137,11 @@ main { overflow: clip; }
 .rsvp-floating .whatsapp-icon { width: 23px; height: 23px; }
 .rsvp-floating:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
 .music-control { position: fixed; z-index: 30; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); display: flex; align-items: flex-start; gap: 10px; }
+.music-hint { position: absolute; top: 24px; right: 88px; translate: 0 -50%; animation: music-hint-float 3.6s ease-in-out infinite; width: max-content; max-width: min(218px, calc(100vw - 124px)); padding: 10px 14px; border: 1px solid #d9bd91b8; border-radius: 15px; background: #fffaf0ed; color: #63482e; box-shadow: inset 0 1px 0 #fff, 0 7px 20px #593b2526; backdrop-filter: blur(12px) saturate(135%); -webkit-backdrop-filter: blur(12px) saturate(135%); font-family: inherit; font-size: 14px; font-weight: 500; line-height: 1.35; text-align: center; pointer-events: none; }
+ .music-hint::before { position: absolute; top: calc(50% - 5px); left: calc(100% + 6px); width: 27px; height: 10px; border-bottom: 1.5px solid #805a36; border-radius: 0 0 55% 45%; content: ''; transform: rotate(-8deg); }
+.music-hint::after { position: absolute; top: calc(50% - 3px); left: calc(100% + 25px); width: 7px; height: 7px; border-top: 1.5px solid #805a36; border-right: 1.5px solid #805a36; content: ''; transform: rotate(38deg); }
+.music-hint-copy { display: block; }
+@keyframes music-hint-float { 0%, 100% { translate: 0 -50%; } 50% { translate: 0 calc(-50% - 3px); } }
 .music-toggle { display: grid; flex: 0 0 48px; width: 48px; height: 48px; place-items: center; padding: 0; border: 1px solid #fff7e5d9; border-radius: 50%; background: #fff9edc9; color: #63482e; box-shadow: inset 0 1px 0 #fff, 0 5px 18px #593b2526; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); cursor: pointer; }
 .music-volume { display: flex; width: 148px; height: 40px; align-items: center; gap: 10px; justify-content: center; padding: 0 12px; border: 1px solid #fff7e5d9; border-radius: 999px; background: #fff9edc9; box-shadow: inset 0 1px 0 #fff, 0 5px 18px #593b2526; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); animation: music-volume-in .2s ease-out both; }
 .music-pause { display: grid; flex: 0 0 28px; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid #a6783552; border-radius: 50%; background: #fffaf0; color: #63482e; box-shadow: 0 1px 4px #593b2520; cursor: pointer; }
@@ -150,6 +155,7 @@ main { overflow: clip; }
 .music-toggle:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
 @media (max-width: 600px) {
   .music-control { gap: 8px; }
+  .music-hint { max-width: min(205px, calc(100vw - 120px)); padding: 10px 12px; font-size: 13px; }
   .music-volume { width: min(190px, calc(100vw - 92px)); height: 56px; gap: 10px; padding: 0 14px; }
   .music-volume input { height: 44px; background: linear-gradient(transparent 19px, #a87938 19px, #dcc49b 24px, transparent 24px); touch-action: pan-y; }
   .music-volume input::-webkit-slider-thumb { width: 22px; height: 22px; }
@@ -157,6 +163,7 @@ main { overflow: clip; }
   .music-pause { flex-basis: 44px; width: 44px; height: 44px; }
   .music-pause svg { width: 18px; height: 18px; }
 }
+@media (prefers-reduced-motion: reduce) { .music-hint { animation: none; } }
 @media (max-width: 480px) { .rsvp-floating { right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); min-height: 52px; padding: 12px 16px; font-size: 14px; } }
 .rsvp-arrow { font-size: 23px; line-height: 1; }
 .back-link { display: block; width: fit-content; margin: 28px auto 0; padding: 10px; font-size: 16px; color: var(--muted); text-underline-offset: 5px; }

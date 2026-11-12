@@ -1,5 +1,5 @@
 import { createContext, Fragment, useContext, useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { createCalendarEvent, decodeGuestName, getConfirmationUrl, invitationConfig } from '../lib/invitation.js';
 
@@ -109,7 +109,7 @@ function BalloonTransition({ onMidpoint, onComplete }) {
   </div></div>, document.body);
 }
 
-function MusicToggle() {
+function MusicToggle({ hintVisible, onHintDismiss }) {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(55);
   const [expanded, setExpanded] = useState(false);
@@ -159,8 +159,13 @@ function MusicToggle() {
 
   return <><audio ref={audioRef} src={`${assets}You%27ll%20Be%20in%20My%20Heart.mp3`} loop preload="metadata" onEnded={() => setPlaying(false)} />
     <div className="music-control" ref={controlRef}>
+      <AnimatePresence>
+        {hintVisible && <motion.div className="music-hint" role="status" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} transition={{ duration: reduced ? 0.12 : 0.32, ease: [0.2, 0.65, 0.3, 1] }}>
+          <span className="music-hint-copy">Puedes activar la música aquí</span>
+        </motion.div>}
+      </AnimatePresence>
       {playing && expanded && <div className="music-volume"><input type="range" min="0" max="100" step="1" value={volume} aria-label="Nivel de audio" onChange={(event) => { const next = Number(event.currentTarget.value); setVolume(next); if (audioRef.current) audioRef.current.volume = next / 100; }} /><button type="button" className="music-pause" aria-label="Pausar música" title="Pausar música" onClick={() => { audioRef.current?.pause(); saveMusicPreference(false); setPlaying(false); setExpanded(false); }}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="4" width="4" height="16" rx="1" /><rect x="13.5" y="4" width="4" height="16" rx="1" /></svg></button></div>}
-    <motion.button className="music-toggle" type="button" onClick={() => playing ? setExpanded((value) => !value) : toggleMusic()} aria-pressed={playing} aria-expanded={playing ? expanded : undefined} aria-label={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} title={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} animate={reduced || playing ? { x: 0, rotate: 0 } : { x: [0, -1.5, 1.5, -0.8, 0], rotate: [0, -0.45, 0.45, -0.25, 0] }} transition={!reduced && !playing ? { x: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' }, rotate: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' } } : { duration: 0.2 }}>
+    <motion.button className="music-toggle" type="button" onClick={() => { onHintDismiss?.(); playing ? setExpanded((value) => !value) : toggleMusic(); }} aria-pressed={playing} aria-expanded={playing ? expanded : undefined} aria-label={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} title={playing ? expanded ? 'Cerrar control de música' : 'Abrir control de música' : 'Activar música'} animate={reduced || playing ? { x: 0, rotate: 0 } : { x: [0, -1.5, 1.5, -0.8, 0], rotate: [0, -0.45, 0.45, -0.25, 0] }} transition={!reduced && !playing ? { x: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' }, rotate: { duration: 0.78, delay: 1.25, repeat: Infinity, repeatDelay: 5.35, ease: 'easeInOut' } } : { duration: 0.2 }}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-3 3-3 3 .9 3 2Zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2ZM9 9l12-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />{!playing && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}</svg>
     </motion.button></div></>;
 }
@@ -177,7 +182,7 @@ function TextReveal({ as = 'p', children, delay = 0, immediate = false, ...props
   return <Element {...props} initial={reduced ? false : { opacity: 0, y: 7 }} whileInView={reduced ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: reduced ? 0.1 : 0.65, delay: reduced ? 0 : delay, ease: [0.2, 0.65, 0.3, 1] }}>{children}</Element>;
 }
 
-function EnvelopeOpening({ guest, onOpened }) {
+function EnvelopeOpening({ guest, onOpened, onBeginOpening }) {
   const reduced = useReducedMotion();
   const guestNameSize = Math.max(20, Math.min(72, 1100 / Math.max([...guest.trim()].length, 1)));
   const [phase, setPhase] = useState('closed');
@@ -250,6 +255,7 @@ function EnvelopeOpening({ guest, onOpened }) {
 
   const beginOpening = () => {
     if (phaseRef.current !== 'closed') return;
+    onBeginOpening?.();
     setLift(Math.min(64, window.innerHeight * 0.07));
     if (!reduced) {
       lockPageScroll();
@@ -303,6 +309,7 @@ function EnvelopeOpening({ guest, onOpened }) {
 export function InvitationExperience() {
   const { guest } = useGuest();
   const [opened, setOpened] = useState(false);
+  const [showMusicHint, setShowMusicHint] = useState(true);
   const [heroVisible, setHeroVisible] = useState(true);
   const [finalRsvpVisible, setFinalRsvpVisible] = useState(false);
   const reduced = useReducedMotion();
@@ -323,8 +330,8 @@ export function InvitationExperience() {
     return () => observer.disconnect();
   }, [opened]);
   return <main className="experience-page" data-opened={opened}>
-    <MusicToggle />
-    <EnvelopeOpening guest={guest} onOpened={() => setOpened(true)} />
+    <MusicToggle hintVisible={showMusicHint && !opened} onHintDismiss={() => setShowMusicHint(false)} />
+    <EnvelopeOpening guest={guest} onBeginOpening={() => setShowMusicHint(false)} onOpened={() => setOpened(true)} />
     {opened && <><motion.div className="invitation-details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0.1 : 0.7 }}><InvitationSections guest={guest} /></motion.div><motion.a className="rsvp-floating" href={getConfirmationUrl(guest)} target="_blank" rel="noopener noreferrer" aria-label="Confirmar asistencia por WhatsApp" aria-hidden={floatingHidden} tabIndex={floatingHidden ? -1 : 0} initial={{ opacity: 0, y: 10 }} animate={{ opacity: floatingHidden ? 0 : 1, y: floatingHidden ? 10 : 0 }} style={{ pointerEvents: floatingHidden ? 'none' : 'auto' }} transition={{ duration: reduced ? 0.1 : 0.4 }}><svg className="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.88 11.88 0 0 0 12.04 0C5.44 0 .06 5.37.06 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.18-1.62a11.98 11.98 0 0 0 5.86 1.49h.01c6.6 0 11.98-5.37 11.98-11.98a11.9 11.9 0 0 0-3.51-8.41ZM12.04 21.85a9.9 9.9 0 0 1-5.05-1.38l-.36-.21-3.67.96.98-3.57-.24-.37a9.88 9.88 0 0 1-1.52-5.3c0-5.49 4.47-9.96 9.96-9.96 2.66 0 5.15 1.04 7.03 2.92a9.87 9.87 0 0 1 2.92 7.04c0 5.49-4.47 9.95-9.95 9.95Zm5.46-7.45c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35Z" /></svg><span>Confirmar asistencia</span></motion.a></>}
   </main>;
 }
